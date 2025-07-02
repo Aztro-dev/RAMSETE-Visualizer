@@ -8,8 +8,8 @@
 
 constexpr double WHEEL_RADIUS_M = 0.041275; // 3.25 inch diameter / 2 to meters
 constexpr double TRACK_WIDTH_M = 0.3175;    // 12.5 inches to meters
-constexpr double B = 2.0;                   // Ramsete aggressiveness factor
-constexpr double ZETA = 0.7;                // Ramsete damping factor
+constexpr double B = 30.0;                  // Ramsete aggressiveness factor
+constexpr double ZETA = 2.5;                // Ramsete damping factor
 constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double RAD_S_TO_RPM = 60.0 / (2.0 * M_PI);
@@ -72,8 +72,6 @@ std::vector<Pose> loadJerryIOCSVPath(const std::string &pathFile) {
     double v = (rpm / 60.0) * 2 * M_PI * WHEEL_RADIUS_M;
 
     double heading = 0.0;
-    if (tokens.size() >= 4 && rawPath.size() == 0)
-      heading = std::stod(tokens[3]) * DEG_TO_RAD;
 
     rawPath.emplace_back(x, y, v, heading);
   }
