@@ -3,12 +3,14 @@
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
+#define TRAIL_THICKNESS 2
+
 #define FPS 100
+
 #define IN_TO_PX 800.0 / 144.0
 #define M_TO_PX IN_TO_PX * 100.0 / 2.54
 #define ROBOT_WIDTH 12.5 * IN_TO_PX
 #define ROBOT_LENGTH 15 * IN_TO_PX
-#define TRAIL_THICKNESS 2
 
 int main() {
   auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-smooth.txt");
@@ -43,14 +45,13 @@ int main() {
   while (!WindowShouldClose()) {
     Pose target = trajectory[i];
 
-    double delta_heading = std::atan2(std::sin(target.heading - trajectory[i - 1].heading),
-                                      std::cos(target.heading - trajectory[i - 1].heading));
+    double heading_error = target.heading - trajectory[std::max(0, i - 1)].heading;
+    double delta_heading = std::atan2(std::sin(heading_error), std::cos(heading_error));
     double w_desired = delta_heading / dt;
 
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target);
     drive_left = std::clamp(drive_left, -450.0, 450.0);
     drive_right = std::clamp(drive_right, -450.0, 450.0);
-    printf("%.2f, %.2f\n", drive_left, drive_right);
 
     double left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
     double right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
