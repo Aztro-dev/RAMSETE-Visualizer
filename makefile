@@ -6,7 +6,7 @@ main: src/main.cpp
 endif
 ifeq ($(UNAME), Windows_NT)
 main: src/main.cpp
-	g++ -g -o build/main.exe src/main.cpp -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
+	g++ -g -o build/main.exe src/main.cpp -Wno-narrowing -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
 endif
 
 clean:
@@ -18,6 +18,6 @@ run: main
 endif
 ifeq ($(UNAME), Windows_NT)
 run:
-	g++ -g -o build/main.exe src/main.cpp -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
+	g++ -g -o build/main.exe src/main.cpp -Wno-narrowing -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
 	./build/main.exe
 endif
