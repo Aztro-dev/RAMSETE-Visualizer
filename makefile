@@ -17,6 +17,7 @@ run: main
 	./build/main
 endif
 ifeq ($(UNAME), Windows_NT)
-run: main.exe
+run:
+	g++ -g -o build/main.exe src/main.cpp -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
 	./build/main.exe
 endif
