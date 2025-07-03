@@ -1,3 +1,4 @@
+#include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 
@@ -11,6 +12,8 @@
 #define M_TO_PX IN_TO_PX * 100.0 / 2.54
 #define ROBOT_WIDTH 12.5 * IN_TO_PX
 #define ROBOT_LENGTH 15 * IN_TO_PX
+
+#define MAX_SPEED_OUTPUT 450.0
 
 int main() {
   auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-smooth.txt");
@@ -42,6 +45,9 @@ int main() {
 
   std::vector<Vector2> trail;
 
+  double drive_left_prev = 0.0;
+  double drive_right_prev = 0.0;
+
   while (!WindowShouldClose()) {
     Pose target = trajectory[i];
 
@@ -50,8 +56,16 @@ int main() {
     double w_desired = delta_heading / dt;
 
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target);
-    drive_left = std::clamp(drive_left, -450.0, 450.0);
-    drive_right = std::clamp(drive_right, -450.0, 450.0);
+    drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+    drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+    double left_diff = drive_left - drive_left_prev;
+    double right_diff = drive_right - drive_right_prev;
+    const double BIG_CHANGE = 10.0;
+    if (left_diff > BIG_CHANGE || right_diff > BIG_CHANGE) {
+      printf("Big change: %+8f, %+8f\n", left_diff, right_diff);
+    }
+    drive_left_prev = drive_left;
+    drive_right_prev = drive_right;
 
     double left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
     double right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
