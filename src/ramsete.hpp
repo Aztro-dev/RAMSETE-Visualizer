@@ -7,13 +7,14 @@
 #include <string>
 #include <vector>
 
-constexpr double WHEEL_RADIUS_M = 0.041275; // 3.25 inch diameter / 2 to meters
-constexpr double TRACK_WIDTH_M = 0.3175;    // 12.5 inches to meters
-constexpr double B = 30.0;                  // Ramsete aggressiveness factor
-constexpr double ZETA = 1.0;                // Ramsete damping factor
+constexpr double WHEEL_RADIUS_M = (2.75 / 2.0) * 2.54 / 100.0; // 2.75 inch diameter / 2 -> meters
+constexpr double TRACK_WIDTH_M = 12.5 * 2.54 / 100.0;          // 12.5 inches -> meters
+constexpr double B = 30.0;                                     // Ramsete aggressiveness factor
+constexpr double ZETA = 1.0;                                   // Ramsete damping factor
 constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double RAD_S_TO_RPM = 60.0 / (2.0 * M_PI);
+constexpr double RPM_TO_RAD_S = (2.0 * M_PI) / 60.0;
 
 // Unified Pose structure
 struct Pose {
