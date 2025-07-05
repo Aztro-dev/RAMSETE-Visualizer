@@ -43,6 +43,10 @@ int main() {
 
   std::vector<Vector2> trail;
 
+  double aggregated_error;
+  double final_time = INFINITY;
+  bool end = false;
+
   while (!WindowShouldClose()) {
     Pose target = trajectory[i];
     double time = GetTime();
@@ -74,15 +78,17 @@ int main() {
     Pose error = target - robot_pose;
     double error_dist = std::hypot(error.x, error.y);
 
+    aggregated_error += error_dist;
+
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_WIDTH / 2 - robot_pose.y * M_TO_PX;
 
     if (i + 1 < trajectory.size()) {
       trail.push_back({robot_rect.x, robot_rect.y});
-      if (std::fmod(time, 0.10) < 0.005) {
-
-        printf("Time: %.1f\n", time);
-      }
+    } else if (!end) {
+      printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
+      final_time = time;
+      end = true;
     }
 
     BeginDrawing();
@@ -92,6 +98,7 @@ int main() {
     DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
 
     DrawText(TextFormat("Err: %.2f", 100.0 * error_dist), 10, 10, 25, BLACK);
+    DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 40, 25, BLACK);
 
     for (int j = 0; j < trail.size() - 1; j++) {
       Vector2 start = trail[j];
