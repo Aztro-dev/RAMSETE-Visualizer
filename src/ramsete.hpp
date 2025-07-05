@@ -22,16 +22,17 @@ struct Pose {
   double y;       // target y position in meters
   double v;       // target linear velocity in m/s
   double heading; // target heading in radians
+  double time;    // target time in seconds
 
-  Pose(double x, double y, double v, double heading)
-      : x(x), y(y), v(v), heading(heading) {}
+  Pose(double x, double y, double v, double heading, double time)
+      : x(x), y(y), v(v), heading(heading), time(time) {}
 
   Pose operator+(const Pose &a) const {
-    return Pose(x + a.x, y + a.y, v + a.v, heading + a.heading);
+    return Pose(x + a.x, y + a.y, v + a.v, heading + a.heading, time + a.time);
   }
 
   Pose operator-(const Pose &a) const {
-    return Pose(x - a.x, y - a.y, v - a.v, heading - a.heading);
+    return Pose(x - a.x, y - a.y, v - a.v, heading - a.heading, time - a.time);
   }
 };
 
@@ -75,17 +76,22 @@ std::vector<Pose> loadJerryIOCSVPath(const std::string &pathFile) {
 
     double heading = 0.0;
 
-    rawPath.emplace_back(x, y, v, heading);
+    rawPath.emplace_back(x, y, v, heading, 0.0);
   }
 
+  double total_time = 0.0;
+
   for (size_t i = 0; i < rawPath.size(); ++i) {
-    if (i + 1 < rawPath.size() && rawPath[i].heading == 0.0 && rawPath[i + 1].heading == 0.0) {
-      double dx = rawPath[i + 1].x - rawPath[i].x;
-      double dy = rawPath[i + 1].y - rawPath[i].y;
-      rawPath[i].heading = std::atan2(dy, dx);
-    } else if (i > 0 && rawPath[i].heading == 0.0) {
-      rawPath[i].heading = rawPath[i - 1].heading;
-    }
+    double dx = rawPath[i + 1].x - rawPath[i].x;
+    double dy = rawPath[i + 1].y - rawPath[i].y;
+    rawPath[i].heading = std::atan2(dy, dx);
+
+    double distance = std::hypot(dx, dy);
+    double average_velocity = (rawPath[i + 1].v + rawPath[i].v) / 2.0;
+    double dt = (average_velocity > 0.01) ? distance / average_velocity : 0.02;
+    dt *= 3.0;
+    total_time += dt;
+    rawPath[i].time = total_time;
   }
 
   return rawPath;

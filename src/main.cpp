@@ -5,14 +5,14 @@
 #define WINDOW_HEIGHT 800
 #define TRAIL_THICKNESS 2
 
-#define FPS 100
+#define FPS 200
 
 #define IN_TO_PX 800.0 / 144.0
 #define M_TO_PX IN_TO_PX * 100.0 / 2.54
 #define ROBOT_WIDTH 12.5 * IN_TO_PX
 #define ROBOT_LENGTH 15 * IN_TO_PX
 
-#define MAX_SPEED_OUTPUT 450.0
+#define MAX_SPEED_OUTPUT 600.0
 
 int main() {
   auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-smooth.txt");
@@ -37,18 +37,21 @@ int main() {
                           ROBOT_WIDTH,
                           ROBOT_LENGTH};
   Vector2 robot_origin = {ROBOT_WIDTH / 2, ROBOT_LENGTH / 2};
-  double dt = 1.0 / FPS;
   int i = 0;
 
   SetTargetFPS(FPS);
 
   std::vector<Vector2> trail;
 
-  double drive_left_prev = 0.0;
-  double drive_right_prev = 0.0;
-
   while (!WindowShouldClose()) {
     Pose target = trajectory[i];
+    double time = GetTime();
+
+    while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
+      i++;
+    }
+
+    double dt = time - target.time;
 
     double heading_error = target.heading - trajectory[std::max(0, i - 1)].heading;
     double delta_heading = std::atan2(std::sin(heading_error), std::cos(heading_error));
@@ -57,14 +60,6 @@ int main() {
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target);
     drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
     drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
-    double left_diff = drive_left - drive_left_prev;
-    double right_diff = drive_right - drive_right_prev;
-    const double BIG_CHANGE = 10.0;
-    if (left_diff > BIG_CHANGE || right_diff > BIG_CHANGE) {
-      printf("Big change: %+8f, %+8f\n", left_diff, right_diff);
-    }
-    drive_left_prev = drive_left;
-    drive_right_prev = drive_right;
 
     double left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
     double right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
@@ -76,12 +71,18 @@ int main() {
     robot_pose.y += v_wheels * std::sin(robot_pose.heading) * dt;
     robot_pose.heading += w_wheels * dt;
 
+    Pose error = target - robot_pose;
+    double error_dist = std::hypot(error.x, error.y);
+
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_WIDTH / 2 - robot_pose.y * M_TO_PX;
 
     if (i + 1 < trajectory.size()) {
-      i++;
       trail.push_back({robot_rect.x, robot_rect.y});
+      if (std::fmod(time, 0.10) < 0.005) {
+
+        printf("Time: %.1f\n", time);
+      }
     }
 
     BeginDrawing();
@@ -90,7 +91,7 @@ int main() {
     DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
     DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
 
-    DrawText(TextFormat("%.2f", 100.0 * std::hypot(target.x - robot_pose.x, target.y - robot_pose.y)), 10, 10, 25, BLACK);
+    DrawText(TextFormat("Err: %.2f", 100.0 * error_dist), 10, 10, 25, BLACK);
 
     for (int j = 0; j < trail.size() - 1; j++) {
       Vector2 start = trail[j];
@@ -98,7 +99,7 @@ int main() {
       DrawLineEx(start, end, TRAIL_THICKNESS, YELLOW);
     }
 
-    for (int j = 0; j < trail.size() - 1; j++) {
+    for (int j = 0; j < trajectory.size() - 1; j++) {
       Pose start = trajectory[j];
       Pose end = trajectory[j + 1];
       Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
