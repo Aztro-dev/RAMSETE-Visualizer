@@ -1,5 +1,6 @@
 #include "ramsete.hpp"
 #include "raylib.h"
+#include <cstdint>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
@@ -14,9 +15,15 @@
 
 #define MAX_SPEED_OUTPUT 600.0
 
+Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
+Color lerp_color(Color a, Color b, double t);
+
 int main() {
   auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-smooth.txt");
   RamseteController ramsete(B, ZETA);
+
+  double min_speed = 0.0;
+  double max_speed = 1.0;
 
   if (trajectory.empty()) {
     std::cerr << "No path points loaded.\n";
@@ -41,7 +48,7 @@ int main() {
 
   SetTargetFPS(FPS);
 
-  std::vector<Vector2> trail;
+  std::vector<Pose> trail;
 
   double aggregated_error;
   double final_time = INFINITY;
@@ -84,7 +91,7 @@ int main() {
     robot_rect.y = WINDOW_WIDTH / 2 - robot_pose.y * M_TO_PX;
 
     if (i + 1 < trajectory.size()) {
-      trail.push_back({robot_rect.x, robot_rect.y});
+      trail.push_back({robot_rect.x, robot_rect.y, v_wheels, robot_pose.heading, time});
     } else if (!end) {
       printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
       final_time = time;
@@ -101,9 +108,12 @@ int main() {
     DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 40, 25, BLACK);
 
     for (int j = 0; j < trail.size() - 1; j++) {
-      Vector2 start = trail[j];
-      Vector2 end = trail[j + 1];
-      DrawLineEx(start, end, TRAIL_THICKNESS, YELLOW);
+      Pose start = trail[j];
+      Pose end = trail[j + 1];
+      Color start_color = velocity_to_color(start.v, min_speed, max_speed);
+      Color end_color = velocity_to_color(end.v, min_speed, max_speed);
+      Color trail_color = lerp_color(start_color, end_color, j / (trail.size() - 1));
+      DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
     }
 
     for (int j = 0; j < trajectory.size() - 1; j++) {
@@ -111,7 +121,7 @@ int main() {
       Pose end = trajectory[j + 1];
       Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
       Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
-      DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, RED);
+      DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
     }
     Vector2 target_px = {
         WINDOW_WIDTH / 2 + target.x * M_TO_PX,
@@ -128,4 +138,39 @@ int main() {
   CloseWindow();
 
   return 0;
+}
+
+Color velocity_to_color(double speed, double min_speed, double max_speed) {
+  double norm = 0.0;
+  if (max_speed != min_speed) {
+    norm = (speed - min_speed) / (max_speed - min_speed);
+  }
+  norm = std::clamp(norm, 0.0, 1.0);
+
+  double ratio;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+
+  if (norm >= 0.5) {
+    ratio = norm / 0.5;
+    r = (int)(0 + ratio * 255);
+    g = 255;
+    b = 0;
+  } else {
+    ratio = (norm - 0.5) / 0.5;
+    r = 255;
+    g = int(255 - ratio * 255);
+    b = 0;
+  }
+
+  return {r, g, b, 255};
+}
+
+Color lerp_color(Color a, Color b, double t) {
+  return (Color){
+      .r = (uint8_t)(a.r + t * (b.r - a.r)),
+      .g = (uint8_t)(a.g + t * (b.g - a.g)),
+      .b = (uint8_t)(a.b + t * (b.b - a.b)),
+      .a = (uint8_t)(a.a + t * (b.a - a.a))};
 }
