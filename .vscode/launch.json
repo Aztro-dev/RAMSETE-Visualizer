@@ -9,7 +9,7 @@
       "stopAtEntry": false,
       "externalConsole": true,
       "cwd": "c:/Users/azael/OneDrive/Desktop/Documents/GitHub/RAMSETE-Visualizer/src",
-      "program": "c:/Users/azael/OneDrive/Desktop/Documents/GitHub/RAMSETE-Visualizer/src/build/Debug/outDebug",
+      "program": "c:/Users/azael/OneDrive/Desktop/Documents/GitHub/RAMSETE-Visualizer/build/main.exe",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
