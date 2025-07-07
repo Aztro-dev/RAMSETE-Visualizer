@@ -81,7 +81,7 @@ std::vector<Pose> loadJerryIOCSVPath(const std::string &pathFile) {
 
   double total_time = 0.0;
 
-  for (size_t i = 0; i < rawPath.size(); ++i) {
+  for (size_t i = 0; i < rawPath.size() - 1; ++i) {
     double dx = rawPath[i + 1].x - rawPath[i].x;
     double dy = rawPath[i + 1].y - rawPath[i].y;
     rawPath[i].heading = std::atan2(dy, dx);
