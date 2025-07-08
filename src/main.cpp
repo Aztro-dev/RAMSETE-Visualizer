@@ -37,7 +37,7 @@ int main() {
   Texture2D field_texture = LoadTexture("resources/field.png");
   Rectangle field_texture_source_rect = {0.0f, 0.0f, (float)field_texture.width, (float)field_texture.height};
 
-  Pose robot_pose = trajectory.front();
+  Pose robot_pose = trajectory.front().pose;
 
   Rectangle robot_rect = {WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX,
                           WINDOW_HEIGHT / 2 + robot_pose.y * M_TO_PX,
@@ -54,9 +54,17 @@ int main() {
   double final_time = INFINITY;
   bool end = false;
 
+  int current_node = 1;
+  int current_node_index = -1;
+
   while (!WindowShouldClose()) {
-    Pose target = trajectory[i];
+    TrajectoryPose target = trajectory[i];
     double time = GetTime();
+
+    if (target.is_node && current_node_index != i) {
+      printf("Node found: %d\n", current_node++);
+      current_node_index = i;
+    }
 
     while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
       i++;
@@ -64,11 +72,11 @@ int main() {
 
     double dt = time - target.time;
 
-    double heading_error = target.heading - trajectory[std::max(0, i - 1)].heading;
+    double heading_error = target.pose.heading - trajectory[std::max(0, i - 1)].pose.heading;
     double delta_heading = std::atan2(std::sin(heading_error), std::cos(heading_error));
     double w_desired = delta_heading / dt;
 
-    auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target);
+    auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose);
     drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
     drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 
@@ -82,7 +90,7 @@ int main() {
     robot_pose.y += v_wheels * std::sin(robot_pose.heading) * dt;
     robot_pose.heading += w_wheels * dt;
 
-    Pose error = target - robot_pose;
+    Pose error = target.pose - robot_pose;
     double error_dist = std::hypot(error.x, error.y);
 
     aggregated_error += error_dist;
@@ -91,7 +99,7 @@ int main() {
     robot_rect.y = WINDOW_WIDTH / 2 - robot_pose.y * M_TO_PX;
 
     if (i + 1 < trajectory.size()) {
-      trail.push_back({robot_rect.x, robot_rect.y, v_wheels, robot_pose.heading, time});
+      trail.push_back({robot_rect.x, robot_rect.y, v_wheels, robot_pose.heading});
     } else if (!end) {
       printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
       final_time = time;
@@ -117,15 +125,15 @@ int main() {
     }
 
     for (int j = 0; j < trajectory.size() - 1; j++) {
-      Pose start = trajectory[j];
-      Pose end = trajectory[j + 1];
+      Pose start = trajectory[j].pose;
+      Pose end = trajectory[j + 1].pose;
       Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
       Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
       DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
     }
     Vector2 target_px = {
-        WINDOW_WIDTH / 2 + target.x * M_TO_PX,
-        WINDOW_WIDTH / 2 - target.y * M_TO_PX};
+        WINDOW_WIDTH / 2 + target.pose.x * M_TO_PX,
+        WINDOW_WIDTH / 2 - target.pose.y * M_TO_PX};
     DrawCircleV(target_px, 5, RED);
 
     DrawCircleV({robot_rect.x, robot_rect.y}, 5, YELLOW);

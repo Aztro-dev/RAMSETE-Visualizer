@@ -22,18 +22,24 @@ struct Pose {
   double y;       // target y position in meters
   double v;       // target linear velocity in m/s
   double heading; // target heading in radians
-  double time;    // target time in seconds
 
-  Pose(double x, double y, double v, double heading, double time)
-      : x(x), y(y), v(v), heading(heading), time(time) {}
+  Pose(double x, double y, double v, double heading)
+      : x(x), y(y), v(v), heading(heading) {}
 
   Pose operator+(const Pose &a) const {
-    return Pose(x + a.x, y + a.y, v + a.v, heading + a.heading, time + a.time);
+    return Pose(x + a.x, y + a.y, v + a.v, heading + a.heading);
   }
 
   Pose operator-(const Pose &a) const {
-    return Pose(x - a.x, y - a.y, v - a.v, heading - a.heading, time - a.time);
+    return Pose(x - a.x, y - a.y, v - a.v, heading - a.heading);
   }
+};
+
+// Special pose that stores some metadata about the current trajectory
+struct TrajectoryPose {
+  Pose pose;
+  double time;
+  bool is_node;
 };
 
 std::pair<double, double> output_to_speeds(double velocity, double angular_velocity) {
@@ -46,10 +52,10 @@ std::pair<double, double> output_to_speeds(double velocity, double angular_veloc
   return {left_rpm, right_rpm};
 }
 
-std::vector<Pose> loadJerryIOCSVPath(const std::string &pathFile) {
+std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile) {
   std::ifstream file(pathFile);
   std::string line;
-  std::vector<Pose> rawPath;
+  std::vector<TrajectoryPose> rawPath;
   bool inPathSection = false;
 
   while (std::getline(file, line)) {
@@ -76,18 +82,19 @@ std::vector<Pose> loadJerryIOCSVPath(const std::string &pathFile) {
 
     double heading = 0.0;
 
-    rawPath.emplace_back(x, y, v, heading, 0.0);
+    TrajectoryPose traj_pose = {Pose(x, y, v, heading), 0.0, tokens.size() == 4};
+    rawPath.emplace_back(traj_pose);
   }
 
   double total_time = 0.0;
 
   for (size_t i = 0; i < rawPath.size() - 1; ++i) {
-    double dx = rawPath[i + 1].x - rawPath[i].x;
-    double dy = rawPath[i + 1].y - rawPath[i].y;
-    rawPath[i].heading = std::atan2(dy, dx);
+    double dx = rawPath[i + 1].pose.x - rawPath[i].pose.x;
+    double dy = rawPath[i + 1].pose.y - rawPath[i].pose.y;
+    rawPath[i].pose.heading = std::atan2(dy, dx);
 
     double distance = std::hypot(dx, dy);
-    double average_velocity = (rawPath[i + 1].v + rawPath[i].v) / 2.0;
+    double average_velocity = (rawPath[i + 1].pose.v + rawPath[i].pose.v) / 2.0;
     double dt = (average_velocity > 0.01) ? distance / average_velocity : 0.02;
     if (i == 0) {
       dt = 0.0;
