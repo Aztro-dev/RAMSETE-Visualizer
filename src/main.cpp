@@ -19,7 +19,7 @@ Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
 Color lerp_color(Color a, Color b, double t);
 
 int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-smooth.txt");
+  auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-tourney.txt");
   RamseteController ramsete(B, ZETA);
 
   double min_speed = 0.0;
@@ -54,21 +54,30 @@ int main() {
   double final_time = INFINITY;
   bool end = false;
 
-  int current_node = 1;
+  int current_node = 0;
   int current_node_index = -1;
+
+  double time = 0.0;
 
   while (!WindowShouldClose()) {
     TrajectoryPose target = trajectory[i];
-    double time = GetTime();
-
-    if (target.is_node && current_node_index != i) {
-      printf("Node found: %d\n", current_node++);
-      current_node_index = i;
-    }
+    time += GetFrameTime();
 
     while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
       i++;
     }
+
+    if (target.is_node && current_node_index != i) {
+      switch (current_node) {
+      case 2: {
+        WaitTime(1.5);
+        time -= 1.5;
+      }
+      }
+      printf("Node found: %d\n", current_node++);
+      current_node_index = i;
+    }
+    printf("%f\n", robot_pose.heading * RAD_TO_DEG);
 
     double dt = time - target.time;
 
