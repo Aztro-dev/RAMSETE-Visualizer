@@ -68,14 +68,15 @@ int main() {
     }
 
     if (target.is_node && current_node_index != i) {
-      switch (current_node) {
-      case 2: {
-        WaitTime(1.5);
-        time -= 1.5;
-      }
-      }
       printf("Node found: %d\n", current_node++);
       current_node_index = i;
+      switch (current_node) {
+      case 3: {
+        WaitTime(1.5);
+        time -= 1.5;
+        continue;
+      }
+      }
     }
     printf("%f\n", robot_pose.heading * RAD_TO_DEG);
 
