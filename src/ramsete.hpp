@@ -16,7 +16,7 @@ constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double RAD_S_TO_RPM = 60.0 / (2.0 * M_PI);
 constexpr double RPM_TO_RAD_S = (2.0 * M_PI) / 60.0;
 
-// Unified Pose structure
+// pose structure for the robot
 struct Pose {
   double x;       // target x position in meters
   double y;       // target y position in meters
@@ -35,7 +35,7 @@ struct Pose {
   }
 };
 
-// Special pose that stores some metadata about the current trajectory
+// pose for trajectory
 struct TrajectoryPose {
   Pose pose;
   double time;
@@ -107,7 +107,7 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile) {
   return rawPath;
 }
 
-// Simple RAMSETE controller
+// ramsete controller
 class RamseteController {
 public:
   RamseteController(double b, double z) : beta(b), zeta(z) {}
