@@ -69,6 +69,9 @@ int main() {
 
     while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
       i++;
+      if (rotating_in_place == true) {
+        break; // Exit the loop if the robot is rotating in place
+      }
     }
 
     if (target.is_node && current_node_index != i) {
@@ -161,6 +164,8 @@ int main() {
       printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
       final_time = time;
       end = true;
+    } else if (rotating_in_place == true) {
+      break; // Exit the loop if the trajectory or if the robot is rotating in place
     }
 
     BeginDrawing();
@@ -187,6 +192,9 @@ int main() {
       Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
       Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
       DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
+      if (rotating_in_place == true) {
+        break;
+      }
     }
     Vector2 target_px = {
         WINDOW_WIDTH / 2 + target.pose.x * M_TO_PX,
