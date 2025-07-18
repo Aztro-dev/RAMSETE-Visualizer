@@ -99,7 +99,7 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile) {
     if (i == 0) {
       dt = 0.0;
     }
-    dt *= 1.5;
+    dt *= 1.0;
     total_time += dt;
     rawPath[i].time = total_time;
   }

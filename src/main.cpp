@@ -15,15 +15,16 @@
 
 #define MAX_SPEED_OUTPUT 600.0
 
+void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
 Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
 Color lerp_color(Color a, Color b, double t);
 
-int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/path.jerryio-tourney.txt");
-  RamseteController ramsete(B, ZETA);
+double min_speed = 0.0;
+double max_speed = 1.0;
 
-  double min_speed = 0.0;
-  double max_speed = 1.0;
+int main() {
+  auto trajectory = loadJerryIOCSVPath("paths/skills.txt");
+  RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
     std::cerr << "No path points loaded.\n";
@@ -59,7 +60,7 @@ int main() {
   bool rotating_in_place = false;
   const double HEADING_THRESHOLD = 5.0 * DEG_TO_RAD;
   const double CURVE_THRESHOLD = 1.5 * DEG_TO_RAD;
-  const double ROTATE_SPEED = 1.0;
+  const double ROTATE_SPEED = 3.0;
 
   double time = 0.0;
 
@@ -76,27 +77,20 @@ int main() {
     if (target.is_node && current_node_index != i) {
       current_node_index = i;
       current_node++;
+      rotating_in_place = false;
+      std::vector<int> rotating_indices = {3, 6, 7, 10, 11, 13, 14, 15, 18, 19};
+      for (int i = 0; i < rotating_indices.size(); i++) {
+        if (current_node == rotating_indices[i]) {
+          rotating_in_place = true;
+          break;
+        }
+      }
 
-      bool is_straight_line = i + 1 < trajectory.size();
-
-      double heading_change = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
-                                         std::cos(target.pose.heading - robot_pose.heading));
-      is_straight_line &= fabs(heading_change) > CURVE_THRESHOLD;
-
-      if (is_straight_line) {
-        rotating_in_place = true;
+      if (rotating_in_place) {
         printf("Node %d reached — rotating in place (heading change: %.1f°)\n", current_node,
                fabs(fmod(trajectory[i + 1].pose.heading - trajectory[i].pose.heading + M_PI, 2 * M_PI) - M_PI) * RAD_TO_DEG);
       } else {
-        rotating_in_place = false;
         printf("Node %d reached — curved path, rotating while moving\n", current_node);
-      }
-
-      if (current_node == 1) {
-        printf("Intake.spin()\n");
-      }
-      if (current_node == 2) {
-        printf("Intake.stop()\n");
       }
     }
 
@@ -124,8 +118,8 @@ int main() {
         double left_rpm = (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
         double right_rpm = -left_rpm;
 
-        left_rpm = std::clamp(left_rpm, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
-        right_rpm = std::clamp(right_rpm, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+        left_rpm = std::clamp(left_rpm * ROTATE_SPEED, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+        right_rpm = std::clamp(right_rpm * ROTATE_SPEED, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 
         double left_v = left_rpm * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
         double right_v = right_rpm * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
@@ -152,6 +146,8 @@ int main() {
       DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
 
       DrawText("Rotating to heading...", 10, 10, 25, BLACK);
+
+      draw_path(trail, trajectory, target, robot_rect);
 
       EndDrawing();
       continue;
@@ -198,28 +194,7 @@ int main() {
     DrawText(TextFormat("Err: %.2f", 100.0 * error_dist), 10, 10, 25, BLACK);
     DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 40, 25, BLACK);
 
-    for (int j = 0; j < trail.size() - 1; j++) {
-      Pose start = trail[j];
-      Pose end = trail[j + 1];
-      Color start_color = velocity_to_color(start.v, min_speed, max_speed);
-      Color end_color = velocity_to_color(end.v, min_speed, max_speed);
-      Color trail_color = lerp_color(start_color, end_color, static_cast<double>(j) / (trail.size() - 1));
-      DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
-    }
-
-    for (int j = 0; j < trajectory.size() - 1; j++) {
-      Pose start = trajectory[j].pose;
-      Pose end = trajectory[j + 1].pose;
-      Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
-      Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
-      DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
-    }
-    Vector2 target_px = {
-        WINDOW_WIDTH / 2 + target.pose.x * M_TO_PX,
-        WINDOW_HEIGHT / 2 - target.pose.y * M_TO_PX};
-    DrawCircleV(target_px, 5, RED);
-
-    DrawCircleV({robot_rect.x, robot_rect.y}, 5, YELLOW);
+    draw_path(trail, trajectory, target, robot_rect);
 
     EndDrawing();
   }
@@ -229,6 +204,31 @@ int main() {
   CloseWindow();
 
   return 0;
+}
+
+void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect) {
+  for (int j = 0; j < trail.size() - 1; j++) {
+    Pose start = trail[j];
+    Pose end = trail[j + 1];
+    Color start_color = velocity_to_color(start.v, min_speed, max_speed);
+    Color end_color = velocity_to_color(end.v, min_speed, max_speed);
+    Color trail_color = lerp_color(start_color, end_color, static_cast<double>(j) / (trail.size() - 1));
+    DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
+  }
+
+  for (int j = 0; j < trajectory.size() - 1; j++) {
+    Pose start = trajectory[j].pose;
+    Pose end = trajectory[j + 1].pose;
+    Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
+    Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
+    DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
+  }
+  Vector2 target_px = {
+      WINDOW_WIDTH / 2 + target.pose.x * M_TO_PX,
+      WINDOW_HEIGHT / 2 - target.pose.y * M_TO_PX};
+  DrawCircleV(target_px, 5, RED);
+
+  DrawCircleV({robot_rect.x, robot_rect.y}, 5, YELLOW);
 }
 
 Color velocity_to_color(double speed, double min_speed, double max_speed) {
