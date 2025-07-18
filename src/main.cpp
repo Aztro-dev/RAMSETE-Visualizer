@@ -58,7 +58,7 @@ int main() {
   int current_node_index = -1;
   bool rotating_in_place = false;
   const double HEADING_THRESHOLD = 5.0 * DEG_TO_RAD;
-  const double CURVE_THRESHOLD = 10.0 * DEG_TO_RAD;
+  const double CURVE_THRESHOLD = 1.5 * DEG_TO_RAD;
   const double ROTATE_SPEED = 1.0;
 
   double time = 0.0;
@@ -77,8 +77,11 @@ int main() {
       current_node_index = i;
       current_node++;
 
-      bool is_straight_line = (i + 1 < trajectory.size()) &&
-                              fabs(fmod(trajectory[i + 1].pose.heading - trajectory[i].pose.heading + M_PI, 2 * M_PI) - M_PI) > CURVE_THRESHOLD;
+      bool is_straight_line = i + 1 < trajectory.size();
+
+      double heading_change = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
+                                         std::cos(target.pose.heading - robot_pose.heading));
+      is_straight_line &= fabs(heading_change) > CURVE_THRESHOLD;
 
       if (is_straight_line) {
         rotating_in_place = true;
@@ -87,6 +90,13 @@ int main() {
       } else {
         rotating_in_place = false;
         printf("Node %d reached — curved path, rotating while moving\n", current_node);
+      }
+
+      if (current_node == 1) {
+        printf("Intake.spin()\n");
+      }
+      if (current_node == 2) {
+        printf("Intake.stop()\n");
       }
     }
 
