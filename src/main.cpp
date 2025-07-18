@@ -35,7 +35,7 @@ int main() {
 
   Texture2D robot_texture = LoadTexture("resources/robot.png");
   Rectangle robot_texture_source_rect = {0.0f, 0.0f, (float)robot_texture.width, (float)robot_texture.height};
-  Texture2D field_texture = LoadTexture("resources/field.png");
+  Texture2D field_texture = LoadTexture("resources/field_skills.png");
   Rectangle field_texture_source_rect = {0.0f, 0.0f, (float)field_texture.width, (float)field_texture.height};
 
   Pose robot_pose = trajectory.front().pose;
@@ -51,7 +51,6 @@ int main() {
 
   std::vector<Pose> trail;
 
-  double aggregated_error = 0.0;
   double final_time = INFINITY;
   bool end = false;
 
@@ -78,7 +77,7 @@ int main() {
       current_node_index = i;
       current_node++;
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {3, 6, 7, 10, 11, 13, 14, 15, 18, 19};
+      std::vector<int> rotating_indices = {3, 6, 7, 10, 11, 13, 14, 18, 19};
       for (int i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
@@ -170,8 +169,6 @@ int main() {
     Pose error = target.pose - robot_pose;
     double error_dist = std::hypot(error.x, error.y);
 
-    aggregated_error += error_dist;
-
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
 
@@ -180,7 +177,6 @@ int main() {
       double py = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
       trail.push_back({px, py, v_wheels, robot_pose.heading});
     } else if (!end) {
-      printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
       final_time = time;
       end = true;
     }
@@ -191,8 +187,7 @@ int main() {
     DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
     DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
 
-    DrawText(TextFormat("Err: %.2f", 100.0 * error_dist), 10, 10, 25, BLACK);
-    DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 40, 25, BLACK);
+    DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
 
     draw_path(trail, trajectory, target, robot_rect);
 
@@ -223,6 +218,21 @@ void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, 
     Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
     DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
   }
+
+  int current_node = 1;
+  for (int j = 0; j < trajectory.size() - 1; j++) {
+    if (!trajectory[j].is_node) {
+      continue;
+    }
+
+    Pose start = trajectory[j].pose;
+    Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
+    DrawCircleV(start_vec, 10, BLUE);
+    const char *text = TextFormat("%d", current_node++);
+    Vector2 text_size = MeasureTextEx(GetFontDefault(), text, 10.0, 0.0);
+    DrawText(text, start_vec.x - text_size.x / 2, start_vec.y - text_size.y / 2, 10, BLACK);
+  }
+
   Vector2 target_px = {
       WINDOW_WIDTH / 2 + target.pose.x * M_TO_PX,
       WINDOW_HEIGHT / 2 - target.pose.y * M_TO_PX};
