@@ -64,38 +64,48 @@ int main() {
   double time = 0.0;
 
   while (!WindowShouldClose()) {
-    TrajectoryPose target = trajectory[i];
     time += GetFrameTime();
-
-    while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
-      i++;
-      if (rotating_in_place) {
-        break; // Exit the loop if the robot is rotating in place
+    if (!rotating_in_place) {
+      while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
+        i++;
       }
     }
+
+    TrajectoryPose target = trajectory[i];
 
     if (target.is_node && current_node_index != i) {
       current_node_index = i;
       current_node++;
 
       bool is_straight_line = (i + 1 < trajectory.size()) &&
-                              fabs(fmod(trajectory[i + 1].pose.heading - trajectory[i].pose.heading + M_PI, 2 * M_PI) - M_PI) < CURVE_THRESHOLD;
+                              fabs(fmod(trajectory[i + 1].pose.heading - trajectory[i].pose.heading + M_PI, 2 * M_PI) - M_PI) > CURVE_THRESHOLD;
 
       if (is_straight_line) {
         rotating_in_place = true;
-        printf("Node %d reached — rotating in place\n", current_node);
+        printf("Node %d reached — rotating in place (heading change: %.1f°)\n", current_node,
+               fabs(fmod(trajectory[i + 1].pose.heading - trajectory[i].pose.heading + M_PI, 2 * M_PI) - M_PI) * RAD_TO_DEG);
       } else {
         rotating_in_place = false;
         printf("Node %d reached — curved path, rotating while moving\n", current_node);
       }
     }
 
-    double dt = time - target.time;
-    if (dt < 1e-6)
-      dt = 1e-6;
+    double dt;
+    if (rotating_in_place) {
+      dt = GetFrameTime(); // Use frame time for rotation
+    } else {
+      dt = time - target.time; // Use trajectory time for RAMSETE
+      if (dt < 1e-6)
+        dt = 1e-6;
+    }
 
-    double heading_error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
-                                      std::cos(target.pose.heading - robot_pose.heading));
+    double target_heading = target.pose.heading;
+    if (rotating_in_place && i + 1 < trajectory.size()) {
+      target_heading = trajectory[i + 1].pose.heading;
+    }
+
+    double heading_error = std::atan2(std::sin(target_heading - robot_pose.heading),
+                                      std::cos(target_heading - robot_pose.heading));
 
     if (rotating_in_place) {
       if (std::abs(heading_error) > HEADING_THRESHOLD) {
@@ -115,8 +125,11 @@ int main() {
 
         robot_pose.heading += w * dt;
 
+        time = target.time;
+
       } else {
         rotating_in_place = false;
+        printf("Rotation complete, resuming trajectory following\n");
       }
 
       robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
@@ -164,8 +177,6 @@ int main() {
       printf("Average error: %.3fm\n", aggregated_error / trajectory.size());
       final_time = time;
       end = true;
-    } else if (rotating_in_place == true) {
-      break; // Exit the loop if the trajectory or if the robot is rotating in place
     }
 
     BeginDrawing();
