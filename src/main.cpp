@@ -14,6 +14,9 @@
 #define ROBOT_LENGTH 15 * IN_TO_PX
 
 #define MAX_SPEED_OUTPUT 600.0
+#define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
+#define CURVE_THRESHOLD 1.5 * DEG_TO_RAD
+#define ROTATE_SPEED 3.0
 
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
 Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
@@ -57,11 +60,11 @@ int main() {
   int current_node = 0;
   int current_node_index = -1;
   bool rotating_in_place = false;
-  const double HEADING_THRESHOLD = 5.0 * DEG_TO_RAD;
-  const double CURVE_THRESHOLD = 1.5 * DEG_TO_RAD;
-  const double ROTATE_SPEED = 3.0;
 
   double time = 0.0;
+
+  double prev_drive_left = 0.0;
+  double prev_drive_right = 0.0;
 
   while (!WindowShouldClose()) {
     time += GetFrameTime();
@@ -73,9 +76,12 @@ int main() {
 
     TrajectoryPose target = trajectory[i];
 
+    // Find out if we are at the next node
     if (target.is_node && current_node_index != i) {
       current_node_index = i;
       current_node++;
+
+      // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
       std::vector<int> rotating_indices = {3, 6, 7, 10, 11, 13, 14, 18, 19};
       for (int i = 0; i < rotating_indices.size(); i++) {
@@ -107,52 +113,27 @@ int main() {
       target_heading = trajectory[i + 1].pose.heading;
     }
 
-    double heading_error = std::atan2(std::sin(target_heading - robot_pose.heading),
-                                      std::cos(target_heading - robot_pose.heading));
-
-    if (rotating_in_place) {
-      if (std::abs(heading_error) > HEADING_THRESHOLD) {
-        double w_rotate = std::clamp(heading_error, -ROTATE_SPEED, ROTATE_SPEED);
-
-        double left_rpm = (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
-        double right_rpm = -left_rpm;
-
-        left_rpm = std::clamp(left_rpm * ROTATE_SPEED, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
-        right_rpm = std::clamp(right_rpm * ROTATE_SPEED, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
-
-        double left_v = left_rpm * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
-        double right_v = right_rpm * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
-
-        double v = (left_v + right_v) / 2.0;
-        double w = (right_v - left_v) / TRACK_WIDTH_M;
-
-        robot_pose.heading += w * dt;
-
-        time = target.time;
-
-      } else {
-        rotating_in_place = false;
-        printf("Rotation complete, resuming trajectory following\n");
-      }
-
-      robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
-      robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
-
-      BeginDrawing();
-      ClearBackground(WHITE);
-
-      DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
-      DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
-
-      DrawText("Rotating to heading...", 10, 10, 25, BLACK);
-
-      draw_path(trail, trajectory, target, robot_rect);
-
-      EndDrawing();
-      continue;
-    }
+    Pose error = target.pose - robot_pose;
+    error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
+                               std::cos(target_heading - robot_pose.heading));
 
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose);
+
+    if (rotating_in_place) {
+      double w_rotate = std::clamp(error.heading, -ROTATE_SPEED, ROTATE_SPEED);
+
+      drive_left = (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
+      drive_right = -drive_left;
+
+      // Keep the current time the same
+      time = target.time;
+
+      rotating_in_place = std::abs(error.heading) > HEADING_THRESHOLD;
+      if (!rotating_in_place) {
+        printf("Rotation complete, resuming trajectory following\n");
+      }
+    }
+
     drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
     drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 
@@ -162,24 +143,23 @@ int main() {
     double v_wheels = (left_velocity + right_velocity) / 2.0;
     double w_wheels = (right_velocity - left_velocity) / TRACK_WIDTH_M;
 
+    if (!rotating_in_place) {
+      if (i + 1 < trajectory.size()) {
+        double px = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
+        double py = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
+        trail.push_back({px, py, v_wheels, robot_pose.heading});
+      } else if (!end) {
+        final_time = time;
+        end = true;
+      }
+    }
+
     robot_pose.x += v_wheels * std::cos(robot_pose.heading) * dt;
     robot_pose.y += v_wheels * std::sin(robot_pose.heading) * dt;
     robot_pose.heading += w_wheels * dt;
 
-    Pose error = target.pose - robot_pose;
-    double error_dist = std::hypot(error.x, error.y);
-
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
-
-    if (i + 1 < trajectory.size()) {
-      double px = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
-      double py = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
-      trail.push_back({px, py, v_wheels, robot_pose.heading});
-    } else if (!end) {
-      final_time = time;
-      end = true;
-    }
 
     BeginDrawing();
     ClearBackground(WHITE);
@@ -187,7 +167,24 @@ int main() {
     DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
     DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
 
-    DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
+    if (rotating_in_place) {
+      DrawText("Rotating to heading...", 10, 10, 25, BLACK);
+    } else {
+      DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
+    }
+
+    DrawText("Left:       , Right:       ", 10, 40, 25, BLACK);
+    int left_measure = MeasureText("Left: ", 25);
+    int right_measure = MeasureText("Left:       , Right: ", 25);
+    if ((int)(GetTime() * 1000.0) % 100 <= 5) {
+      DrawText(TextFormat("%5.1f", drive_left), 10 + left_measure, 40, 25, BLACK);
+      DrawText(TextFormat("%5.1f", drive_right), 10 + right_measure, 40, 25, BLACK);
+      prev_drive_left = drive_left;
+      prev_drive_right = drive_right;
+    } else {
+      DrawText(TextFormat("%5.1f", prev_drive_left), 10 + left_measure, 40, 25, BLACK);
+      DrawText(TextFormat("%5.1f", prev_drive_right), 10 + right_measure, 40, 25, BLACK);
+    }
 
     draw_path(trail, trajectory, target, robot_rect);
 
