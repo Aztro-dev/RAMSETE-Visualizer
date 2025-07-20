@@ -48,7 +48,7 @@ int main() {
                           ROBOT_WIDTH,
                           ROBOT_LENGTH};
   Vector2 robot_origin = {ROBOT_WIDTH / 2, ROBOT_LENGTH / 2};
-  int i = 0;
+  size_t i = 0;
 
   SetTargetFPS(FPS);
 
@@ -61,7 +61,7 @@ int main() {
   bool reverse_switch = false;
 
   int current_node = 0;
-  int current_node_index = -1;
+  size_t current_node_index = -1;
   bool rotating_in_place = false;
 
   double time = 0.0;
@@ -87,7 +87,7 @@ int main() {
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
       std::vector<int> rotating_indices = {4, 7, 8, 11, 12, 14, 15, 19, 20};
-      for (int i = 0; i < rotating_indices.size(); i++) {
+      for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
           break;
@@ -96,7 +96,7 @@ int main() {
 
       // These indices we are supposed to reverse in
       std::vector<int> reverse_indices = {3};
-      for (int i = 0; i < reverse_indices.size(); i++) {
+      for (size_t i = 0; i < reverse_indices.size(); i++) {
         if (current_node == reverse_indices[i]) {
           reverse_switch = true;
         } else if (current_node == reverse_indices[i] + 1) {
@@ -218,30 +218,30 @@ int main() {
 }
 
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect) {
-  for (int j = 0; j < trail.size() - 1; j++) {
-    Pose start = trail[j];
-    Pose end = trail[j + 1];
+  for (size_t i = 0; i < trail.size() - 1; i++) {
+    Pose start = trail[i];
+    Pose end = trail[i + 1];
     Color start_color = velocity_to_color(start.v, min_speed, max_speed);
     Color end_color = velocity_to_color(end.v, min_speed, max_speed);
-    Color trail_color = lerp_color(start_color, end_color, static_cast<double>(j) / (trail.size() - 1));
+    Color trail_color = lerp_color(start_color, end_color, static_cast<double>(i) / (trail.size() - 1));
     DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
   }
 
-  for (int j = 0; j < trajectory.size() - 1; j++) {
-    Pose start = trajectory[j].pose;
-    Pose end = trajectory[j + 1].pose;
+  for (size_t i = 0; i < trajectory.size() - 1; i++) {
+    Pose start = trajectory[i].pose;
+    Pose end = trajectory[i + 1].pose;
     Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
     Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
     DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
   }
 
   int current_node = 1;
-  for (int j = 0; j < trajectory.size() - 1; j++) {
-    if (!trajectory[j].is_node) {
+  for (size_t i = 0; i < trajectory.size() - 1; i++) {
+    if (!trajectory[i].is_node) {
       continue;
     }
 
-    Pose start = trajectory[j].pose;
+    Pose start = trajectory[i].pose;
     Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
     DrawCircleV(start_vec, 10, BLUE);
     const char *text = TextFormat("%d", current_node++);
