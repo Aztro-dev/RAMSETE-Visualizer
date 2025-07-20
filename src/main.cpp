@@ -26,7 +26,7 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/skills.txt");
+  auto trajectory = loadJerryIOCSVPath("paths/skills-reverse-path.txt");
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -86,7 +86,7 @@ int main() {
 
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {4, 6, 7, 10, 11, 13, 14, 18, 19};
+      std::vector<int> rotating_indices = {4, 7, 8, 11, 12, 14, 15, 19, 20};
       for (int i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
