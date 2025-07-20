@@ -85,7 +85,7 @@ int main() {
 
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {2, 3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 26, 28, 29};
+      std::vector<int> rotating_indices = {3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 26, 28, 29};
       for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
@@ -111,14 +111,7 @@ int main() {
       }
     }
 
-    double dt;
-    if (rotating_in_place) {
-      dt = GetFrameTime(); // Use frame time for rotation
-    } else {
-      dt = time - target.time; // Use trajectory time for RAMSETE
-      if (dt < 1e-6)
-        dt = 1e-6;
-    }
+    double dt = GetFrameTime(); // Use frame time for rotation
 
     double target_heading = target.pose.heading;
     if (rotating_in_place && i + 1 < trajectory.size()) {
@@ -131,11 +124,29 @@ int main() {
       target.pose.v = -target.pose.v;
     }
 
-    Pose error = target.pose - robot_pose;
-    error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
-                               std::cos(target_heading - robot_pose.heading));
+    // Calculate desired angular velocity for RAMSETE feedforward
+    double w_desired = 0.0;
+    if (i + 1 < trajectory.size() && !rotating_in_place && !reverse_switch) {
+      // Estimate curvature from trajectory
+      double dt_traj = trajectory[i + 1].time - trajectory[i].time;
+      if (dt_traj > 1e-6) {
+        double dheading = trajectory[i + 1].pose.heading - trajectory[i].pose.heading;
+        // Wrap angle difference
+        dheading = std::atan2(std::sin(dheading), std::cos(dheading));
+        w_desired = dheading / dt_traj;
+      }
+    }
 
-    auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose);
+    Pose error = target.pose - robot_pose;
+    if (!reverse_switch) {
+      error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
+                                 std::cos(target_heading - robot_pose.heading));
+    } else {
+      error.heading = std::atan2(std::sin(target_heading - (robot_pose.heading + M_PI)),
+                                 std::cos(target_heading - (robot_pose.heading + M_PI)));
+    }
+
+    auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose, w_desired);
 
     if (rotating_in_place) {
       drive_left = pid_turn(error.heading);
