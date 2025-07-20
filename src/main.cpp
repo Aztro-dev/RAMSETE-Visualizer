@@ -15,12 +15,11 @@
 
 #define MAX_SPEED_OUTPUT 600.0
 #define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
-#define CURVE_THRESHOLD 1.5 * DEG_TO_RAD
-#define ROTATE_SPEED 1.0
 
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
 Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
 Color lerp_color(Color a, Color b, double t);
+double pid_turn(double error);
 
 double min_speed = 0.0;
 double max_speed = 1.0;
@@ -86,7 +85,7 @@ int main() {
 
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {2, 3, 5, 7, 10, 12, 14, 16, 18, 19, 20, 22, 26, 28, 29};
+      std::vector<int> rotating_indices = {2, 3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 26, 28, 29};
       for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
@@ -95,7 +94,7 @@ int main() {
       }
 
       // These indices we are supposed to reverse in
-      std::vector<int> reverse_indices = {4, 6, 11, 13, 17, 21, 25, 27};
+      std::vector<int> reverse_indices = {4, 6, 11, 13, 17, 19, 21, 25, 27};
       for (size_t i = 0; i < reverse_indices.size(); i++) {
         if (current_node == reverse_indices[i]) {
           reverse_switch = true;
@@ -139,9 +138,7 @@ int main() {
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose);
 
     if (rotating_in_place) {
-      double w_rotate = std::clamp(error.heading, -ROTATE_SPEED, ROTATE_SPEED);
-
-      drive_left = ROTATE_SPEED * (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
+      drive_left = pid_turn(error.heading);
       drive_right = -drive_left;
 
       // Keep the current time the same
@@ -292,4 +289,16 @@ Color lerp_color(Color a, Color b, double t) {
       .g = (uint8_t)(a.g + t * (b.g - a.g)),
       .b = (uint8_t)(a.b + t * (b.b - a.b)),
       .a = (uint8_t)(a.a + t * (b.a - a.a))};
+}
+
+#define TURN_KP 3.0
+double pid_turn(double error) {
+  double speed = error * TURN_KP;
+  speed *= (-speed * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
+
+  if (error < 0.0) {
+    speed *= -1;
+  }
+
+  return speed;
 }
