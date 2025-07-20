@@ -57,6 +57,9 @@ int main() {
   double final_time = INFINITY;
   bool end = false;
 
+  // A switch to reverse instead of go forward the entire time
+  bool reverse_switch = false;
+
   int current_node = 0;
   int current_node_index = -1;
   bool rotating_in_place = false;
@@ -83,11 +86,21 @@ int main() {
 
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {3, 6, 7, 10, 11, 13, 14, 18, 19};
+      std::vector<int> rotating_indices = {4, 6, 7, 10, 11, 13, 14, 18, 19};
       for (int i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
           break;
+        }
+      }
+
+      // These indices we are supposed to reverse in
+      std::vector<int> reverse_indices = {3};
+      for (int i = 0; i < reverse_indices.size(); i++) {
+        if (current_node == reverse_indices[i]) {
+          reverse_switch = true;
+        } else if (current_node == reverse_indices[i] + 1) {
+          reverse_switch = false;
         }
       }
 
@@ -113,6 +126,12 @@ int main() {
       target_heading = trajectory[i + 1].pose.heading;
     }
 
+    // Reverse the target heading and velocity so that we can go backwards in the trajectory
+    if (reverse_switch) {
+      target.pose.heading = std::remainder(target.pose.heading + M_PI, 2 * M_PI);
+      target.pose.v = -target.pose.v;
+    }
+
     Pose error = target.pose - robot_pose;
     error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
                                std::cos(target_heading - robot_pose.heading));
@@ -122,7 +141,7 @@ int main() {
     if (rotating_in_place) {
       double w_rotate = std::clamp(error.heading, -ROTATE_SPEED, ROTATE_SPEED);
 
-      drive_left = (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
+      drive_left = ROTATE_SPEED * (-w_rotate * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
       drive_right = -drive_left;
 
       // Keep the current time the same
