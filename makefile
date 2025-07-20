@@ -1,23 +1,46 @@
+# Detect OS
 UNAME := $(shell uname)
 
-ifeq ($(UNAME), Linux)
-main: src/main.cpp
-	g++ -g -o build/main src/main.cpp -D_DEFAULT_SOURCE -Wno-narrowing -Wno-missing-braces -O2 -D_DEFAULT_SOURCE -I. -I/home/aztro/Documents/Libraries/raylib/src -I/home/aztro/Documents/Libraries/raylib/src/external  -I/usr/local/include -I/home/aztro/Documents/Libraries/raylib/src/external/glfw/include -L. -L/home/aztro/Documents/Libraries/raylib/src -L/home/aztro/Documents/Libraries/raylib/src -L/usr/local/lib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic -DPLATFORM_DESKTOP -DPLATFORM_DESKTOP_GLFW
-endif
+# Source and output
+SRC := ./src/main.cpp
+OUT_DIR := ./build
+OUT := $(OUT_DIR)/main
 ifeq ($(UNAME), Windows_NT)
-main: src/main.cpp
-	g++ -g -o build/main.exe src/main.cpp -Wno-narrowing -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
+    OUT := $(OUT).exe
 endif
 
-clean:
-	rm -r build/*
+# Optional: user override for raylib paths
+RAYLIB_DIR ?= ./raylib         # Default relative location
+RAYLIB_INCLUDE ?= $(RAYLIB_DIR)
+RAYLIB_EXTERNAL ?= $(RAYLIB_DIR)
+
+# Ensure build dir exists
+$(shell mkdir -p $(OUT_DIR))
+
+# Compiler and flags
+CXX := g++
+CXXFLAGS := -g -O2 -Wall -Wno-narrowing -Wno-missing-braces
+CPPFLAGS := -I. -I$(RAYLIB_INCLUDE) -I$(RAYLIB_EXTERNAL)
 
 ifeq ($(UNAME), Linux)
+	LIBS := -L$(RAYLIB_DIR) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
+	DEFINES := -DPLATFORM_DESKTOP -DPLATFORM_DESKTOP_GLFW -D_DEFAULT_SOURCE
+endif
+
+ifeq ($(UNAME), Windows_NT)
+	CPPFLAGS += -I$(RAYLIB_DIR)
+	LIBS := -L$(RAYLIB_DIR) -lraylib -lgdi32 -lwinmm
+	DEFINES := -DPLATFORM_DESKTOP
+endif
+
+# Build target
+main: $(SRC)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(DEFINES) -o $(OUT) $^ $(LIBS)
+
+# Run target
 run: main
-	./build/main
-endif
-ifeq ($(UNAME), Windows_NT)
-run:
-	g++ -g -o build/main.exe src/main.cpp -Wno-narrowing -IC:\Users\azael\OneDrive\Desktop\Documents\GitHub\RAMSETE-Visualizer\raylib -Lraylib -lraylib -lgdi32 -lwinmm -I.
-	./build/main.exe
-endif
+	./$(OUT)
+
+# Clean build artifacts
+clean:
+	rm -rf $(OUT_DIR)/*
