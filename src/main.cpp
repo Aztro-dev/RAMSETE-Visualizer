@@ -1,3 +1,4 @@
+#include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 #include <cstdint>
@@ -25,7 +26,7 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/skills-reverse-path.txt");
+  auto trajectory = loadJerryIOCSVPath("paths/skills-slow.txt");
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -161,8 +162,14 @@ int main() {
       }
     }
 
-    drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
-    drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+    double desired_change_left = drive_left - prev_drive_left;
+    double desired_change_right = drive_right - prev_drive_right;
+
+    double max_change_left = max_rpm_change(prev_drive_left, dt);
+    double max_change_right = max_rpm_change(prev_drive_right, dt);
+
+    drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
+    drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
 
     double left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
     double right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
@@ -188,6 +195,9 @@ int main() {
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
 
+    prev_drive_left = drive_left;
+    prev_drive_right = drive_right;
+
     BeginDrawing();
     ClearBackground(WHITE);
 
@@ -199,20 +209,6 @@ int main() {
     } else {
       DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
     }
-
-    DrawText("Left:       , Right:       ", 10, 40, 25, BLACK);
-    int left_measure = MeasureText("Left: ", 25);
-    int right_measure = MeasureText("Left:       , Right: ", 25);
-    if ((int)(GetTime() * 1000.0) % 100 <= 5) {
-      DrawText(TextFormat("%5.1f", drive_left), 10 + left_measure, 40, 25, BLACK);
-      DrawText(TextFormat("%5.1f", drive_right), 10 + right_measure, 40, 25, BLACK);
-      prev_drive_left = drive_left;
-      prev_drive_right = drive_right;
-    } else {
-      DrawText(TextFormat("%5.1f", prev_drive_left), 10 + left_measure, 40, 25, BLACK);
-      DrawText(TextFormat("%5.1f", prev_drive_right), 10 + right_measure, 40, 25, BLACK);
-    }
-
     draw_path(trail, trajectory, target, robot_rect);
 
     EndDrawing();
@@ -302,7 +298,7 @@ Color lerp_color(Color a, Color b, double t) {
       .a = (uint8_t)(a.a + t * (b.a - a.a))};
 }
 
-#define TURN_KP 3.0
+#define TURN_KP 2.0
 double pid_turn(double error) {
   double speed = error * TURN_KP;
   speed *= (-speed * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
