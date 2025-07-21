@@ -7,8 +7,8 @@
 #define WINDOW_HEIGHT 800
 #define TRAIL_THICKNESS 2
 
-#define FPS 200
-
+#define FPS 100
+#define TIMESTEP 0.01 // corresponds to robot's 10ms update rate
 #define IN_TO_PX 800.0 / 144.0
 #define M_TO_PX IN_TO_PX * 100.0 / 2.54
 #define ROBOT_WIDTH 12.5 * IN_TO_PX
@@ -16,7 +16,6 @@
 
 #define MAX_SPEED_OUTPUT 600.0
 #define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
-
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
 Color velocity_to_color(double v_wheels, double min_speed, double max_speed);
 Color lerp_color(Color a, Color b, double t);
@@ -57,7 +56,6 @@ int main() {
   double final_time = INFINITY;
   bool end = false;
 
-  // A switch to reverse instead of go forward the entire time
   bool reverse_switch = false;
 
   int current_node = 0;
@@ -69,8 +67,19 @@ int main() {
   double prev_drive_left = 0.0;
   double prev_drive_right = 0.0;
 
+  double accumulator = 0.0;
+  double last_time = GetTime();
+
   while (!WindowShouldClose()) {
-    time += GetFrameTime();
+    double now = GetTime();
+    double frame_time = now - last_time;
+    last_time = now;
+    accumulator += frame_time;
+
+    while (accumulator >= TIMESTEP) {
+      time += TIMESTEP;
+      accumulator -= TIMESTEP;
+    }
     if (!rotating_in_place) {
       while (i + 1 < trajectory.size() && trajectory[i + 1].time <= time) {
         i++;
@@ -111,8 +120,6 @@ int main() {
         printf("Node %d reached — curved path, rotating while moving\n", current_node);
       }
     }
-
-    double dt = GetFrameTime(); // Use frame time for rotation
 
     double target_heading = target.pose.heading;
     if (rotating_in_place && i + 1 < trajectory.size()) {
@@ -165,8 +172,8 @@ int main() {
     double desired_change_left = drive_left - prev_drive_left;
     double desired_change_right = drive_right - prev_drive_right;
 
-    double max_change_left = max_rpm_change(prev_drive_left, dt);
-    double max_change_right = max_rpm_change(prev_drive_right, dt);
+    double max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
+    double max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
 
     drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
     drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
@@ -187,10 +194,10 @@ int main() {
         end = true;
       }
     }
-
-    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * dt;
-    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * dt;
-    robot_pose.heading += w_wheels * dt;
+    // updates robot pose based on velocities
+    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * TIMESTEP;
+    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * TIMESTEP;
+    robot_pose.heading += w_wheels * TIMESTEP;
 
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
