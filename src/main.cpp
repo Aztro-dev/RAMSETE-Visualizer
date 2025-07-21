@@ -195,9 +195,9 @@ int main() {
       }
     }
     // updates robot pose based on velocities
-    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * TIMESTEP;
-    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * TIMESTEP;
-    robot_pose.heading += w_wheels * TIMESTEP;
+    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * frame_time;
+    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * frame_time;
+    robot_pose.heading += w_wheels * frame_time;
 
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
