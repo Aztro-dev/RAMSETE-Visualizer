@@ -9,7 +9,7 @@
 
 constexpr double WHEEL_RADIUS_M = (2.75 / 2.0) * 2.54 / 100.0; // 2.75 inch diameter / 2 -> meters
 constexpr double TRACK_WIDTH_M = 12.5 * 2.54 / 100.0;          // 12.5 inches -> meters
-constexpr double B = 15.0;                                     // Ramsete aggressiveness factor
+constexpr double B = 10.0;                                     // Ramsete aggressiveness factor
 constexpr double ZETA = 5.0;                                   // Ramsete damping factor
 constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
