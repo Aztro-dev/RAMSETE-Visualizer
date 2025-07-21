@@ -61,6 +61,12 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile) {
   while (std::getline(file, line)) {
     if (line.rfind("#PATH-POINTS-START", 0) == 0) {
       inPathSection = true;
+      if (rawPath.size() > 0) {
+        // There are two nodes at the end of the path, this deletes the second one
+        rawPath.pop_back();
+        // skip a line
+        std::getline(file, line);
+      }
       continue;
     }
     if (!inPathSection || line.empty() || line[0] == '#')
