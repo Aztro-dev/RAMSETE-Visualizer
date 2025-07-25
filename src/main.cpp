@@ -25,7 +25,7 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/skills-path-separation.txt");
+  auto trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt");
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -95,7 +95,8 @@ int main() {
 
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
-      std::vector<int> rotating_indices = {3, 5, 7, 12, 14, 16, 18, 20, 22, 26, 28, 29};
+      // std::vector<int> rotating_indices = {3, 5, 7, 12, 14, 16, 18, 20, 22, 26, 28, 29};
+      std::vector<int> rotating_indices = {4, 5, 7, 11};
       for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
@@ -104,7 +105,8 @@ int main() {
       }
 
       // These indices we are supposed to reverse in
-      std::vector<int> reverse_indices = {4, 6, 11, 13, 17, 19, 21, 25, 27};
+      // std::vector<int> reverse_indices = {4, 6, 11, 13, 17, 19, 21, 25, 27};
+      std::vector<int> reverse_indices = {3, 6, 8, 10};
       for (size_t i = 0; i < reverse_indices.size(); i++) {
         if (current_node == reverse_indices[i]) {
           reverse_switch = true;
