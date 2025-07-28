@@ -37,7 +37,7 @@ int main() {
 
   Texture2D robot_texture = LoadTexture("resources/robot.png");
   Rectangle robot_texture_source_rect = {0.0f, 0.0f, (float)robot_texture.width, (float)robot_texture.height};
-  Texture2D field_texture = LoadTexture("resources/field_skills.png");
+  Texture2D field_texture = LoadTexture("resources/field_match.png");
   Rectangle field_texture_source_rect = {0.0f, 0.0f, (float)field_texture.width, (float)field_texture.height};
 
   Vector2 robot_origin = {ROBOT_WIDTH / 2, ROBOT_LENGTH / 2};
@@ -121,7 +121,7 @@ int main() {
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
       // std::vector<int> rotating_indices = {3, 5, 7, 12, 14, 16, 18, 20, 22, 26, 28, 29};
-      std::vector<int> rotating_indices = {4, 5, 7, 11};
+      std::vector<int> rotating_indices = {4, 5, 7, 9, 11};
       for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
