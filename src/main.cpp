@@ -1,4 +1,7 @@
-#include "motor.hpp"
+// While we would normally *want* to be as realistic as possible,
+// The motor simulation is too unrealistic and relies on too many
+// variables to make realistic.
+// #include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 #include <cstdint>
@@ -58,11 +61,27 @@ int main() {
 
   double time = 0.0;
 
+#ifdef MOTOR_SIM
   double prev_drive_left = 0.0;
   double prev_drive_right = 0.0;
+#endif
 
   double accumulator = 0.0;
+  double now;
+  double frame_time;
   double last_time = GetTime();
+
+  TrajectoryPose target = trajectory[0];
+  Pose error = target.pose;
+  double target_heading;
+  double w_desired;
+  std::pair<double, double> drive;
+  double drive_left;
+  double drive_right;
+  double left_velocity;
+  double right_velocity;
+  double v_wheels;
+  double w_wheels;
 
   // Find the starting position based on current_node
   if (current_node != 0) {
@@ -96,9 +115,14 @@ int main() {
                           ROBOT_LENGTH};
 
   while (!WindowShouldClose()) {
-    double now = GetTime();
-    double frame_time = now - last_time;
+    now = GetTime();
+    frame_time = now - last_time;
     last_time = now;
+
+    if (IsKeyDown(KEY_SPACE)) {
+      goto draw;
+    }
+
     accumulator += frame_time;
 
     while (accumulator >= TIMESTEP) {
@@ -111,7 +135,7 @@ int main() {
       }
     }
 
-    TrajectoryPose target = trajectory[i];
+    target = trajectory[i];
 
     // Find out if we are at the next node
     if (target.is_node && current_node_index != i) {
@@ -148,7 +172,7 @@ int main() {
       }
     }
 
-    double target_heading = target.pose.heading;
+    target_heading = target.pose.heading;
     if (rotating_in_place && i + 1 < trajectory.size()) {
       target_heading = trajectory[i + 1].pose.heading;
     }
@@ -160,7 +184,7 @@ int main() {
     }
 
     // Calculate desired angular velocity for RAMSETE feedforward
-    double w_desired = 0.0;
+    w_desired = 0.0;
     if (i + 1 < trajectory.size() && !rotating_in_place && !reverse_switch) {
       // Estimate curvature from trajectory
       double dt_traj = trajectory[i + 1].time - trajectory[i].time;
@@ -172,7 +196,7 @@ int main() {
       }
     }
 
-    Pose error = target.pose - robot_pose;
+    error = target.pose - robot_pose;
     if (!reverse_switch) {
       error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
                                  std::cos(target_heading - robot_pose.heading));
@@ -181,7 +205,9 @@ int main() {
                                  std::cos(target_heading - (robot_pose.heading + M_PI)));
     }
 
-    auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose, w_desired);
+    drive = ramsete.calculate(robot_pose, target.pose, w_desired);
+    drive_left = drive.first;
+    drive_right = drive.second;
 
     if (rotating_in_place) {
       drive_left = pid_turn(error.heading);
@@ -196,6 +222,7 @@ int main() {
       }
     }
 
+#ifdef MOTOR_SIM
     double desired_change_left = drive_left - prev_drive_left;
     double desired_change_right = drive_right - prev_drive_right;
 
@@ -204,12 +231,16 @@ int main() {
 
     drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
     drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
+#else
+    drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+    drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+#endif
 
-    double left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
-    double right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
+    left_velocity = drive_left * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
+    right_velocity = drive_right * (2 * M_PI * WHEEL_RADIUS_M) / 60.0;
 
-    double v_wheels = (left_velocity + right_velocity) / 2.0;
-    double w_wheels = (right_velocity - left_velocity) / TRACK_WIDTH_M;
+    v_wheels = (left_velocity + right_velocity) / 2.0;
+    w_wheels = (right_velocity - left_velocity) / TRACK_WIDTH_M;
 
     if (!rotating_in_place) {
       if (i + 1 < trajectory.size()) {
@@ -229,9 +260,12 @@ int main() {
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
 
+#ifdef MOTOR_SIM
     prev_drive_left = drive_left;
     prev_drive_right = drive_right;
+#endif
 
+  draw:
     BeginDrawing();
     ClearBackground(WHITE);
 

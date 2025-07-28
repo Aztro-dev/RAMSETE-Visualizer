@@ -1,11 +1,12 @@
 #include "ramsete.hpp"
 #include <algorithm>
 #include <cmath>
-
+#ifndef MOTOR_SIM
+#define MOTOR_SIM
 // Motor constants
-#define MAX_RPM 600              // Max speed of the motor, rpm
-#define STALL_TORQUE (2.1 / 6.0) // N⋅m for 600 RPM cartridge (1/6th of 100 RPM)
-#define FREE_SPEED_TORQUE 0.0
+#define MAX_RPM 600                          // Max speed of the motor, rpm
+#define STALL_TORQUE (2.1 / 6.0)             // Nm for 600 RPM cartridge (1/6th of 100 RPM)
+#define FREE_SPEED_TORQUE 0.1                // Nm for 600 RPM cartridge
 #define TORQUE_DROPOFF_SPEED (0.6 * MAX_RPM) // 60% of max speed
 
 // Robor Constants
@@ -27,7 +28,7 @@ double get_motor_torque(double motor_rpm) {
   } else {
     // After dropoff point: linear decrease from stall torque to zero
     double remaining_speed_ratio = (MAX_RPM - abs_rpm) / (MAX_RPM - TORQUE_DROPOFF_SPEED);
-    return STALL_TORQUE * remaining_speed_ratio;
+    return FREE_SPEED_TORQUE + STALL_TORQUE * remaining_speed_ratio;
   }
 }
 
@@ -69,3 +70,4 @@ double max_rpm_change(double current_rpm, double dt) {
 
   return std::abs(max_change);
 }
+#endif
