@@ -40,12 +40,6 @@ int main() {
   Texture2D field_texture = LoadTexture("resources/field_skills.png");
   Rectangle field_texture_source_rect = {0.0f, 0.0f, (float)field_texture.width, (float)field_texture.height};
 
-  Pose robot_pose = trajectory.front().pose;
-
-  Rectangle robot_rect = {WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX,
-                          WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX,
-                          ROBOT_WIDTH,
-                          ROBOT_LENGTH};
   Vector2 robot_origin = {ROBOT_WIDTH / 2, ROBOT_LENGTH / 2};
   size_t i = 0;
 
@@ -69,6 +63,37 @@ int main() {
 
   double accumulator = 0.0;
   double last_time = GetTime();
+
+  // Find the starting position based on current_node
+  if (current_node != 0) {
+    int node_count = 0;
+    for (size_t j = 0; j < trajectory.size(); j++) {
+      if (trajectory[j].is_node) {
+        node_count++;
+        if (node_count == current_node) {
+          i = j;
+          current_node_index = j;
+          break;
+        }
+      }
+    }
+
+    // If we couldn't find the requested node, fall back to start
+    if (current_node_index == (size_t)-1) {
+      std::cerr << "Warning: Could not find node " << current_node << ", starting from beginning.\n";
+      current_node = 0;
+      i = 0;
+    }
+  }
+
+  time = trajectory[i].time;
+
+  Pose robot_pose = trajectory[i].pose;
+
+  Rectangle robot_rect = {WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX,
+                          WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX,
+                          ROBOT_WIDTH,
+                          ROBOT_LENGTH};
 
   while (!WindowShouldClose()) {
     double now = GetTime();
