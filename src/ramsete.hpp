@@ -9,12 +9,21 @@
 
 constexpr double WHEEL_RADIUS_M = (2.75 / 2.0) * 2.54 / 100.0; // 2.75 inch diameter / 2 -> meters
 constexpr double TRACK_WIDTH_M = 12.5 * 2.54 / 100.0;          // 12.5 inches -> meters
-constexpr double B = 2.8;                                      // Standard RAMSETE aggressiveness
+constexpr double B = 2.7;                                      // Standard RAMSETE aggressiveness
 constexpr double ZETA = 0.85;                                  // Standard RAMSETE damping
 constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double RAD_S_TO_RPM = 60.0 / (2.0 * M_PI);
 constexpr double RPM_TO_RAD_S = (2.0 * M_PI) / 60.0;
+
+// Theta is in radians
+double sinc(double theta) {
+  if (theta < 1e-3) {
+    return 1.0;
+  } else {
+    return std::sin(theta) / theta;
+  }
+}
 
 // pose structure for the robot
 struct Pose {
@@ -131,11 +140,11 @@ public:
     double x_error_robot = cosTheta * dx + sinTheta * dy;
     double y_error_robot = -sinTheta * dx + cosTheta * dy;
 
-    double k = 2.0 * zeta * std::sqrt(beta * desired.v * desired.v);
+    double k = 2.0 * zeta * std::sqrt(w_desired * w_desired + beta * desired.v * desired.v);
 
     double v = desired.v * std::cos(angleError) + k * x_error_robot;
 
-    double angular_velocity = w_desired + k * std::sin(angleError) + beta * desired.v * y_error_robot;
+    double angular_velocity = w_desired + k * angleError + beta * desired.v * y_error_robot * sinc(angleError);
 
     return output_to_speeds(v, angular_velocity);
   }

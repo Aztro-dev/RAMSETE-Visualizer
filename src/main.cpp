@@ -1,12 +1,10 @@
 // While we would normally *want* to be as realistic as possible,
 // The motor simulation is too unrealistic and relies on too many
 // variables to make realistic.
-#include "motor.hpp"
+// #include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 #include <cstdint>
-
-#define MOTOR_SIM // Enable motor simulation for realistic motor limiting
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
@@ -80,6 +78,10 @@ int main() {
   std::pair<double, double> drive;
   double drive_left;
   double drive_right;
+  double max_change_right;
+  double max_change_left;
+  double desired_change_right;
+  double desired_change_left;
   double left_velocity;
   double right_velocity;
   double v_wheels;
@@ -122,22 +124,7 @@ int main() {
     last_time = now;
 
     if (IsKeyDown(KEY_SPACE)) {
-      // Skip simulation update and go straight to drawing
-      BeginDrawing();
-      ClearBackground(WHITE);
-
-      DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
-      DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
-
-      if (rotating_in_place) {
-        DrawText("Rotating to heading...", 10, 10, 25, BLACK);
-      } else {
-        DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
-      }
-      draw_path(trail, trajectory, target, robot_rect);
-
-      EndDrawing();
-      continue;
+      goto draw;
     }
 
     accumulator += frame_time;
@@ -240,11 +227,11 @@ int main() {
     }
 
 #ifdef MOTOR_SIM
-    double desired_change_left = drive_left - prev_drive_left;
-    double desired_change_right = drive_right - prev_drive_right;
+    desired_change_left = drive_left - prev_drive_left;
+    desired_change_right = drive_right - prev_drive_right;
 
-    double max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
-    double max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
+    max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
+    max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
 
     drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
     drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
@@ -283,6 +270,7 @@ int main() {
     prev_drive_right = drive_right;
 #endif
 
+  draw:
     BeginDrawing();
     ClearBackground(WHITE);
 
