@@ -1,10 +1,12 @@
 // While we would normally *want* to be as realistic as possible,
 // The motor simulation is too unrealistic and relies on too many
 // variables to make realistic.
-// #include "motor.hpp"
+#include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 #include <cstdint>
+
+#define MOTOR_SIM // Enable motor simulation for realistic motor limiting
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
@@ -120,7 +122,22 @@ int main() {
     last_time = now;
 
     if (IsKeyDown(KEY_SPACE)) {
-      goto draw;
+      // Skip simulation update and go straight to drawing
+      BeginDrawing();
+      ClearBackground(WHITE);
+
+      DrawTexturePro(field_texture, field_texture_source_rect, {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT}, {0, 0}, 0.0, WHITE);
+      DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_pose.heading * RAD_TO_DEG, BLACK);
+
+      if (rotating_in_place) {
+        DrawText("Rotating to heading...", 10, 10, 25, BLACK);
+      } else {
+        DrawText(TextFormat("Time: %.1f", std::min(time, final_time)), 10, 10, 25, BLACK);
+      }
+      draw_path(trail, trajectory, target, robot_rect);
+
+      EndDrawing();
+      continue;
     }
 
     accumulator += frame_time;
@@ -252,6 +269,7 @@ int main() {
         end = true;
       }
     }
+
     // updates robot pose based on velocities
     robot_pose.x += v_wheels * std::cos(robot_pose.heading) * frame_time;
     robot_pose.y += v_wheels * std::sin(robot_pose.heading) * frame_time;
@@ -265,7 +283,6 @@ int main() {
     prev_drive_right = drive_right;
 #endif
 
-  draw:
     BeginDrawing();
     ClearBackground(WHITE);
 
@@ -280,14 +297,17 @@ int main() {
     draw_path(trail, trajectory, target, robot_rect);
 
     EndDrawing();
-  }
+  } // end of while (!WindowShouldClose())
+
+  // Cleanup resources after main loop
   UnloadTexture(robot_texture);
   UnloadTexture(field_texture);
-
   CloseWindow();
 
   return 0;
 }
+
+// Function definitions moved outside main()
 
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect) {
   for (size_t i = 0; i < trail.size() - 1; i++) {
