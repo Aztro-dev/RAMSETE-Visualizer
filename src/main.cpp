@@ -11,7 +11,7 @@
 #define TRAIL_THICKNESS 2
 
 #define FPS 100
-#define TIMESTEP 0.01 // corresponds to robot's 10ms update rate
+#define TIMESTEP 0.010 // corresponds to robot's 10ms update rate
 #define IN_TO_PX 800.0 / 144.0
 #define M_TO_PX IN_TO_PX * 100.0 / 2.54
 #define ROBOT_WIDTH 12.5 * IN_TO_PX
@@ -28,7 +28,9 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  auto trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt");
+  std::vector<int> reverse_indices = {3, 6, 8, 10};
+  std::vector<int> rotating_indices = {4, 5, 7, 9, 11};
+  auto trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt", reverse_indices);
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -78,10 +80,12 @@ int main() {
   std::pair<double, double> drive;
   double drive_left;
   double drive_right;
+#ifdef MOTOR_SIM
   double max_change_right;
   double max_change_left;
   double desired_change_right;
   double desired_change_left;
+#endif
   double left_velocity;
   double right_velocity;
   double v_wheels;
@@ -149,7 +153,6 @@ int main() {
       // If we are at the next node, check to see if we should turn in place or not
       rotating_in_place = false;
       // std::vector<int> rotating_indices = {3, 5, 7, 12, 14, 16, 18, 20, 22, 26, 28, 29};
-      std::vector<int> rotating_indices = {4, 5, 7, 9, 11};
       for (size_t i = 0; i < rotating_indices.size(); i++) {
         if (current_node == rotating_indices[i]) {
           rotating_in_place = true;
@@ -159,7 +162,6 @@ int main() {
 
       // These indices we are supposed to reverse in
       // std::vector<int> reverse_indices = {4, 6, 11, 13, 17, 19, 21, 25, 27};
-      std::vector<int> reverse_indices = {3, 6, 8, 10};
       for (size_t i = 0; i < reverse_indices.size(); i++) {
         if (current_node == reverse_indices[i]) {
           reverse_switch = true;
@@ -181,12 +183,6 @@ int main() {
       target_heading = trajectory[i + 1].pose.heading;
     }
 
-    // Reverse the target heading and velocity so that we can go backwards in the trajectory
-    if (reverse_switch) {
-      target.pose.heading = std::remainder(target.pose.heading + M_PI, 2 * M_PI);
-      target.pose.v = -target.pose.v;
-    }
-
     // Calculate desired angular velocity for RAMSETE feedforward
     w_desired = 0.0;
     if (i + 1 < trajectory.size() && !rotating_in_place && !reverse_switch) {
@@ -201,13 +197,8 @@ int main() {
     }
 
     error = target.pose - robot_pose;
-    if (!reverse_switch) {
-      error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
-                                 std::cos(target_heading - robot_pose.heading));
-    } else {
-      error.heading = std::atan2(std::sin(target_heading - (robot_pose.heading + M_PI)),
-                                 std::cos(target_heading - (robot_pose.heading + M_PI)));
-    }
+    error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
+                               std::cos(target_heading - robot_pose.heading));
 
     drive = ramsete.calculate(robot_pose, target.pose, w_desired);
     drive_left = drive.first;
