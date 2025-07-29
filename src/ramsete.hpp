@@ -146,8 +146,8 @@ public:
     double dx = desired.x - current.x;
     double dy = desired.y - current.y;
 
-    double angleError = std::atan2(std::sin(desired.heading - current.heading),
-                                   std::cos(desired.heading - current.heading));
+    double angle_error = std::atan2(std::sin(desired.heading - current.heading),
+                                    std::cos(desired.heading - current.heading));
 
     double cosTheta = std::cos(current.heading);
     double sinTheta = std::sin(current.heading);
@@ -157,9 +157,9 @@ public:
 
     double k = 2.0 * zeta * std::sqrt(w_desired * w_desired + beta * desired.v * desired.v);
 
-    double v = desired.v * std::cos(angleError) + k * x_error_robot;
+    double v = desired.v * std::cos(angle_error) + k * x_error_robot;
 
-    double angular_velocity = w_desired + k * angleError + beta * desired.v * y_error_robot * sinc(angleError);
+    double angular_velocity = w_desired + k * angle_error + beta * desired.v * y_error_robot * sinc(angle_error);
 
     return output_to_speeds(v, angular_velocity);
   }

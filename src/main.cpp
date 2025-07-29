@@ -28,9 +28,9 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  std::vector<int> reverse_indices = {3, 6, 8, 10};
-  std::vector<int> rotating_indices = {4, 5, 7, 9, 11};
-  auto trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt", reverse_indices);
+  std::vector<int> reverse_indices = {3, 5, 8, 10};
+  std::vector<int> rotating_indices = {4, 9, 11};
+  auto trajectory = loadJerryIOCSVPath("paths/awp.txt", reverse_indices);
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
