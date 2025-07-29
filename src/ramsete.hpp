@@ -9,8 +9,8 @@
 
 constexpr double WHEEL_RADIUS_M = (2.75 / 2.0) * 2.54 / 100.0; // 2.75 inch diameter / 2 -> meters
 constexpr double TRACK_WIDTH_M = 12.5 * 2.54 / 100.0;          // 12.5 inches -> meters
-constexpr double B = 15.0;                                     // Ramsete aggressiveness factor
-constexpr double ZETA = 5.0;                                   // Ramsete damping factor
+constexpr double B = 2.0;                                      // Standard RAMSETE aggressiveness
+constexpr double ZETA = 0.7;                                   // Standard RAMSETE damping
 constexpr double DEG_TO_RAD = M_PI / 180.0;
 constexpr double RAD_TO_DEG = 180.0 / M_PI;
 constexpr double RAD_S_TO_RPM = 60.0 / (2.0 * M_PI);
@@ -46,8 +46,8 @@ std::pair<double, double> output_to_speeds(double velocity, double angular_veloc
   double left_mps = velocity - angular_velocity * (TRACK_WIDTH_M / 2.0);
   double right_mps = velocity + angular_velocity * (TRACK_WIDTH_M / 2.0);
 
-  double left_rpm = (left_mps / (WHEEL_RADIUS_M * M_PI)) * 60.0;
-  double right_rpm = (right_mps / (WHEEL_RADIUS_M * M_PI)) * 60.0;
+  double left_rpm = (left_mps / (2.0 * M_PI * WHEEL_RADIUS_M)) * 60.0;
+  double right_rpm = (right_mps / (2.0 * M_PI * WHEEL_RADIUS_M)) * 60.0;
 
   return {left_rpm, right_rpm};
 }
@@ -131,11 +131,11 @@ public:
     double x_error_robot = cosTheta * dx + sinTheta * dy;
     double y_error_robot = -sinTheta * dx + cosTheta * dy;
 
-    double k = 2.0 * zeta * std::sqrt(w_desired * w_desired + beta * desired.v * desired.v);
+    double k = 2.0 * zeta * std::sqrt(beta * desired.v * desired.v);
 
     double v = desired.v * std::cos(angleError) + k * x_error_robot;
 
-    double angular_velocity = w_desired + beta * desired.v * y_error_robot + k * angleError;
+    double angular_velocity = w_desired + k * std::sin(angleError) + beta * desired.v * y_error_robot;
 
     return output_to_speeds(v, angular_velocity);
   }

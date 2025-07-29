@@ -1,8 +1,7 @@
 #include "ramsete.hpp"
 #include <algorithm>
 #include <cmath>
-#ifndef MOTOR_SIM
-#define MOTOR_SIM
+
 // Motor constants
 #define MAX_RPM 600                          // Max speed of the motor, rpm
 #define STALL_TORQUE (2.1 / 6.0)             // Nm for 600 RPM cartridge (1/6th of 100 RPM)
@@ -70,4 +69,3 @@ double max_rpm_change(double current_rpm, double dt) {
 
   return std::abs(max_change);
 }
-#endif
