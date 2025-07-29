@@ -1,10 +1,12 @@
 // While we would normally *want* to be as realistic as possible,
 // The motor simulation is too unrealistic and relies on too many
 // variables to make realistic.
-// #include "motor.hpp"
+#include "motor.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
 #include <cstdint>
+
+#define MOTOR_SIM
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
@@ -28,9 +30,9 @@ double min_speed = 0.0;
 double max_speed = 1.0;
 
 int main() {
-  std::vector<int> reverse_indices = {3, 5, 8, 10};
-  std::vector<int> rotating_indices = {4, 9, 11};
-  auto trajectory = loadJerryIOCSVPath("paths/awp.txt", reverse_indices);
+  std::vector<int> reverse_indices = {3, 6, 12};
+  std::vector<int> rotating_indices = {4, 5, 7, 9, 13};
+  auto trajectory = loadJerryIOCSVPath("paths/qualifier-awp.txt", reverse_indices);
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -193,6 +195,11 @@ int main() {
         // Wrap angle difference
         dheading = std::atan2(std::sin(dheading), std::cos(dheading));
         w_desired = dheading / dt_traj;
+
+        // For reverse motion, negate the feedforward
+        if (reverse_switch) {
+          w_desired = -w_desired;
+        }
       }
     }
 
@@ -203,6 +210,21 @@ int main() {
     drive = ramsete.calculate(robot_pose, target.pose, w_desired);
     drive_left = drive.first;
     drive_right = drive.second;
+
+    if (reverse_switch) {
+      drive_left = -drive_left;
+      drive_right = -drive_right;
+    }
+
+    error = target.pose - robot_pose;
+    error.heading = std::atan2(std::sin(target_heading - robot_pose.heading),
+                               std::cos(target_heading - robot_pose.heading));
+
+    drive = ramsete.calculate(robot_pose, target.pose, w_desired);
+    drive_left = drive.first;
+    drive_right = drive.second;
+
+    // printf("RAMSETE Output - Left RPM: %.1f, Right RPM: %.1f\n", drive_left, drive_right);
 
     if (rotating_in_place) {
       drive_left = pid_turn(error.heading);
@@ -249,9 +271,9 @@ int main() {
     }
 
     // updates robot pose based on velocities
-    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * frame_time;
-    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * frame_time;
-    robot_pose.heading += w_wheels * frame_time;
+    robot_pose.x += v_wheels * std::cos(robot_pose.heading) * TIMESTEP;
+    robot_pose.y += v_wheels * std::sin(robot_pose.heading) * TIMESTEP;
+    robot_pose.heading += w_wheels * TIMESTEP;
 
     robot_rect.x = WINDOW_WIDTH / 2 + robot_pose.x * M_TO_PX;
     robot_rect.y = WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX;
@@ -365,14 +387,11 @@ Color lerp_color(Color a, Color b, double t) {
       .a = (uint8_t)(a.a + t * (b.a - a.a))};
 }
 
-#define TURN_KP 2.0
+#define TURN_KP 200.0 // Increased gain for faster turning
 double pid_turn(double error) {
-  double speed = error * TURN_KP;
-  speed *= (-speed * TRACK_WIDTH_M / 2.0) * 60.0 / (2 * M_PI * WHEEL_RADIUS_M);
-
-  if (error < 0.0) {
-    speed *= -1;
-  }
-
-  return speed;
+  // Simple proportional control: output RPM proportional to heading error
+  double rpm = error * TURN_KP;
+  rpm = -rpm;
+  // Clamp to reasonable limits
+  return std::clamp(rpm, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 }

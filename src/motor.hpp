@@ -12,7 +12,7 @@
 
 // Robor Constants
 #define GEAR_RATIO (1.0 / 1.0)
-#define ROBOT_MASS 6.0 / 2.2049 // lbs -> kg
+#define ROBOT_MASS 14.0 / 2.2049 // lbs -> kg
 #define NUM_MOTORS_PER_SIDE 3
 
 // Calculate the torque available from a motor at a given RPM
