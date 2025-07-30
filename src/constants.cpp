@@ -9,10 +9,10 @@
 #define RAD_S_TO_RPM 60.0 / (2.0 * M_PI)
 #define RPM_TO_RAD_S (2.0 * M_PI) / 60.0
 
-#define WHEEL_RADIUS_M (2.75 / 2.0) * 2.54 / 100.0 // 2.75 inch diameter / 2 -> meters
-#define TRACK_WIDTH_M 12.5 * 2.54 / 100.0          // 12.5 inches -> meters
-#define ROBOT_WIDTH 12.5 * IN_TO_PX
-#define ROBOT_LENGTH 15 * IN_TO_PX
+#define WHEEL_RADIUS_M (2.75 / 2.0 * 2.54 / 100.0) // 2.75 inch diameter / 2 -> meters
+#define TRACK_WIDTH_M (12.5 * 2.54 / 100.0)        // 12.5 inches -> meters
+#define ROBOT_WIDTH (12.5 * IN_TO_PX)
+#define ROBOT_LENGTH (14.0 * IN_TO_PX)
 
 #define MAX_SPEED_OUTPUT 600.0
 

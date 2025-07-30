@@ -12,7 +12,7 @@
 #define WINDOW_HEIGHT 800
 #define TRAIL_THICKNESS 2
 
-#define FPS 100
+#define FPS 300
 
 #define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
 
@@ -20,7 +20,6 @@ void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, 
 
 int main() {
   std::thread control_thread(control_robot, "paths/qualifier-AWP.txt");
-
 
   SetTraceLogLevel(LOG_ERROR); // Only show error and fatal messages
 
