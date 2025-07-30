@@ -21,6 +21,7 @@ void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, 
 int main() {
   std::thread control_thread(control_robot, "paths/qualifier-AWP.txt");
 
+
   SetTraceLogLevel(LOG_ERROR); // Only show error and fatal messages
 
   InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "RAMSETE visualizer");
