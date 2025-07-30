@@ -64,15 +64,15 @@ std::pair<double, double> output_to_speeds(double velocity, double angular_veloc
 std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile, std::vector<int> reverse_list) {
   std::ifstream file(pathFile);
   std::string line;
-  std::vector<TrajectoryPose> rawPath;
+  std::vector<TrajectoryPose> raw_path;
   bool inPathSection = false;
 
   while (std::getline(file, line)) {
     if (line.rfind("#PATH-POINTS-START", 0) == 0) {
       inPathSection = true;
-      if (rawPath.size() > 0) {
+      if (raw_path.size() > 0) {
         // There are two nodes at the end of the path, this deletes the second one
-        rawPath.pop_back();
+        raw_path.pop_back();
         // skip a line
         std::getline(file, line);
       }
@@ -100,29 +100,29 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile, std:
     bool is_node = tokens.size() == 4;
 
     TrajectoryPose traj_pose = {Pose(x, y, v, heading), 0.0, is_node};
-    rawPath.emplace_back(traj_pose);
+    raw_path.push_back(traj_pose);
   }
 
   double total_time = 0.0;
 
   double current_node = 0;
 
-  for (size_t i = 0; i < rawPath.size() - 1; ++i) {
-    if (rawPath[i].is_node) {
+  for (size_t i = 0; i < raw_path.size() - 1; ++i) {
+    if (raw_path[i].is_node) {
       current_node++;
     }
 
-    double dx = rawPath[i + 1].pose.x - rawPath[i].pose.x;
-    double dy = rawPath[i + 1].pose.y - rawPath[i].pose.y;
-    rawPath[i].pose.heading = std::atan2(dy, dx);
+    double dx = raw_path[i + 1].pose.x - raw_path[i].pose.x;
+    double dy = raw_path[i + 1].pose.y - raw_path[i].pose.y;
+    raw_path[i].pose.heading = std::atan2(dy, dx);
 
     double distance = std::hypot(dx, dy);
-    double average_velocity = (rawPath[i + 1].pose.v + rawPath[i].pose.v) / 2.0;
+    double average_velocity = (raw_path[i + 1].pose.v + raw_path[i].pose.v) / 2.0;
 
     bool should_reverse = std::find(reverse_list.begin(), reverse_list.end(), current_node) != reverse_list.end();
     if (should_reverse) {
-      rawPath[i].pose.heading = std::remainder(rawPath[i].pose.heading + M_PI, 2 * M_PI);
-      rawPath[i].pose.v = -rawPath[i].pose.v;
+      raw_path[i].pose.heading = std::remainder(raw_path[i].pose.heading + M_PI, 2 * M_PI);
+      raw_path[i].pose.v = -raw_path[i].pose.v;
     }
 
     double dt = (average_velocity > 0.01) ? distance / average_velocity : 0.01;
@@ -131,10 +131,10 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile, std:
     }
     dt *= 1.0;
     total_time += dt;
-    rawPath[i].time = total_time;
+    raw_path[i].time = total_time;
   }
 
-  return rawPath;
+  return raw_path;
 }
 
 // ramsete controller
