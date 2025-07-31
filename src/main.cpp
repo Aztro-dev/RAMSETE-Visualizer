@@ -12,7 +12,7 @@
 #define WINDOW_HEIGHT 800
 #define TRAIL_THICKNESS 2
 
-#define FPS 300
+#define FPS 0
 
 #define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
 
@@ -43,7 +43,13 @@ int main() {
 
   std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt", reverse_indices);
 
+  double time = 0.0;
+
   while (!WindowShouldClose()) {
+    if (!IsKeyDown(KEY_SPACE) && !path_done) {
+      time += GetFrameTime();
+    }
+
     position_mutex.lock();
     Pose robot_copy_pose = robot_pose;
     position_mutex.unlock();
@@ -67,7 +73,7 @@ int main() {
     DrawTexturePro(robot_texture, robot_texture_source_rect, robot_rect, robot_origin, 270 - robot_copy_pose.heading * RAD_TO_DEG, BLACK);
     position_mutex.unlock();
 
-    DrawText(TextFormat("Time: %.1f", GetTime()), 10, 10, 25, BLACK);
+    DrawText(TextFormat("Time: %.1f", time), 10, 10, 25, BLACK);
     draw_path(trail, trajectory, target_copy, robot_rect);
 
     EndDrawing();

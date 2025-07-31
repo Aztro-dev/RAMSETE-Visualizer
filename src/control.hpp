@@ -1,5 +1,5 @@
 #pragma once
-// #include "motor.hpp"
+#include "motor.hpp"
 #include "ramsete.hpp"
 #include <atomic>
 #include <chrono>
@@ -14,9 +14,9 @@ void pid_turn();
 #define STARTING_NODE 1
 
 std::atomic<bool> should_end({false});
+std::atomic<bool> path_done({false});
 
-std::vector<int> reverse_indices = {3, 6, 12};
-std::vector<int> rotating_indices = {5, 7, 9, 13};
+std::vector<int> reverse_indices = {3, 6, 11};
 
 std::mutex position_mutex;
 Pose robot_pose;
@@ -35,7 +35,6 @@ void control_robot(std::string path) {
 
   size_t i = 0;
 
-  bool reverse_switch = false;
   bool on_node = false;
 
   int current_node = STARTING_NODE;
@@ -89,13 +88,13 @@ void control_robot(std::string path) {
 
   while (!should_end && time <= trajectory[trajectory.size() - 1].time) {
     if (IsKeyDown(KEY_SPACE)) {
+      last_time = GetTime();
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       continue;
     }
 
     now = GetTime();
     frame_time = now - last_time;
-    last_time = now;
 
     accumulator += frame_time;
 
@@ -123,12 +122,39 @@ void control_robot(std::string path) {
     on_node = current_node_index == i;
 
     switch (current_node) {
+    case 3: {
+    }
     case 4: {
       if (on_node) {
         pid_turn();
       }
     }
+    case 5: {
+      if (on_node) {
+        pid_turn();
+      }
     }
+
+    case 7: {
+      if (on_node) {
+        pid_turn();
+      }
+    }
+
+    case 9: {
+      if (on_node) {
+        pid_turn();
+      }
+    }
+    case 12: {
+      if (on_node) {
+        pid_turn();
+      }
+    }
+    }
+
+    // Because movements/delays might take time in the previous step, we have to reset the previous time
+    last_time = GetTime();
 
     // Calculate desired angular velocity for RAMSETE feedforward
     double w_desired = 0.0;
@@ -142,18 +168,10 @@ void control_robot(std::string path) {
         w_desired = dheading / dt_traj;
 
         // For reverse motion, negate the feedforward
-        if (reverse_switch) {
-          w_desired = -w_desired;
-        }
       }
     }
 
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose, w_desired);
-
-    if (reverse_switch) {
-      drive_left = -drive_left;
-      drive_right = -drive_right;
-    }
 
 #ifdef MOTOR_SIM
     double desired_change_left = drive_left - prev_drive_left;
@@ -189,25 +207,56 @@ void control_robot(std::string path) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(TIMESTEP * 1000.0)));
   }
+
+  path_done = true;
 }
 
-#define TURN_KP 0.01 // Increased gain for faster turning
+#define TURN_KP 150.0 // Increased gain for faster turning
 void pid_turn() {
+#ifdef MOTOR_SIM
+  double prev_drive_left = 0.0;
+  double prev_drive_right = 0.0;
+#endif
+
   double error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                             std::cos(target.pose.heading - robot_pose.heading));
 
-  while (std::fabs(error) > 1.0 * DEG_TO_RAD) {
-    printf("Error: %.2f degrees\n", error * RAD_TO_DEG);
+  double prev_error = error;
 
-    // Calculate motor commands instead of directly modifying pose
+  while (std::fabs(error) > 1.0 * DEG_TO_RAD) {
+    if (should_end) {
+      break;
+    }
+
+    error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
+                       std::cos(target.pose.heading - robot_pose.heading));
+
+    prev_error = error;
+
     double turn_speed = error * TURN_KP;
+
     turn_speed = std::clamp(turn_speed, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 
-    // Apply differential drive: left wheel negative, right wheel positive for CCW turn
     double drive_left = -turn_speed;
     double drive_right = turn_speed;
 
-    // Convert to velocities and update robot pose using your existing kinematics
+#ifdef MOTOR_SIM
+    double desired_change_left = drive_left - prev_drive_left;
+    double desired_change_right = drive_right - prev_drive_right;
+
+    double max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
+    double max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
+
+    drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
+    drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
+
+    prev_drive_left = drive_left;
+    prev_drive_right = drive_right;
+#else
+    drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+    drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
+#endif
+
     double left_velocity = drive_left * 2.0 * M_PI * WHEEL_RADIUS_M / 60.0;
     double right_velocity = drive_right * 2.0 * M_PI * WHEEL_RADIUS_M / 60.0;
 
@@ -217,12 +266,6 @@ void pid_turn() {
     robot_pose.heading += w_wheels * TIMESTEP;
     position_mutex.unlock();
 
-    // Recalculate error for next iteration
-    error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
-                       std::cos(target.pose.heading - robot_pose.heading));
-
-    if (should_end)
-      break;
     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(TIMESTEP * 1000.0)));
   }
 }
