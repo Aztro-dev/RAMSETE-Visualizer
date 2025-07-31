@@ -116,13 +116,19 @@ void control_robot(std::string path) {
       current_node_index = i;
       current_node++;
 
-      printf("On node %d\n", current_node);
-    }
+      on_node = true;
 
-    on_node = current_node_index == i;
+      printf("On node %d\n", current_node);
+    } else {
+      on_node = false;
+    }
 
     switch (current_node) {
     case 3: {
+      if (on_node) {
+        printf("outtaking...\n");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      }
     }
     case 4: {
       if (on_node) {
@@ -221,8 +227,6 @@ void pid_turn() {
   double error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                             std::cos(target.pose.heading - robot_pose.heading));
 
-  double prev_error = error;
-
   while (std::fabs(error) > 1.0 * DEG_TO_RAD) {
     if (should_end) {
       break;
@@ -230,8 +234,6 @@ void pid_turn() {
 
     error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                        std::cos(target.pose.heading - robot_pose.heading));
-
-    prev_error = error;
 
     double turn_speed = error * TURN_KP;
 
@@ -268,4 +270,8 @@ void pid_turn() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(TIMESTEP * 1000.0)));
   }
+
+  position_mutex.lock();
+  robot_pose.heading = target.pose.heading;
+  position_mutex.unlock();
 }
