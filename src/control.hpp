@@ -24,6 +24,10 @@ Pose robot_pose;
 std::mutex target_mutex;
 TrajectoryPose target;
 
+#ifdef MOTOR_SIM
+std::pair<double, double> prev_drive;
+#endif
+
 void control_robot(std::string path) {
   std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(path, reverse_indices);
   RamseteController ramsete(B, ZETA);
@@ -82,8 +86,8 @@ void control_robot(std::string path) {
   double accumulator = 0.0;
 
 #ifdef MOTOR_SIM
-  double prev_drive_left = 0.0;
-  double prev_drive_right = 0.0;
+  prev_drive.first = 0.0;
+  prev_drive.second = 0.0;
 #endif
 
   while (!should_end && time <= trajectory[trajectory.size() - 1].time) {
@@ -180,17 +184,17 @@ void control_robot(std::string path) {
     auto [drive_left, drive_right] = ramsete.calculate(robot_pose, target.pose, w_desired);
 
 #ifdef MOTOR_SIM
-    double desired_change_left = drive_left - prev_drive_left;
-    double desired_change_right = drive_right - prev_drive_right;
+    double desired_change_left = drive_left - prev_drive.first;
+    double desired_change_right = drive_right - prev_drive.second;
 
-    double max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
-    double max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
+    double max_change_left = max_rpm_change(prev_drive.first, TIMESTEP);
+    double max_change_right = max_rpm_change(prev_drive.second, TIMESTEP);
 
-    drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
-    drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
+    drive_left = prev_drive.first + std::clamp(desired_change_left, -max_change_left, max_change_left);
+    drive_right = prev_drive.second + std::clamp(desired_change_right, -max_change_right, max_change_right);
 
-    prev_drive_left = drive_left;
-    prev_drive_right = drive_right;
+    prev_drive.first = drive_left;
+    prev_drive.second = drive_right;
 #else
     drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
     drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
@@ -219,11 +223,6 @@ void control_robot(std::string path) {
 
 #define TURN_KP 150.0 // Increased gain for faster turning
 void pid_turn() {
-#ifdef MOTOR_SIM
-  double prev_drive_left = 0.0;
-  double prev_drive_right = 0.0;
-#endif
-
   double error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                             std::cos(target.pose.heading - robot_pose.heading));
 
@@ -246,17 +245,17 @@ void pid_turn() {
     double drive_right = turn_speed;
 
 #ifdef MOTOR_SIM
-    double desired_change_left = drive_left - prev_drive_left;
-    double desired_change_right = drive_right - prev_drive_right;
+    double desired_change_left = drive_left - prev_drive.first;
+    double desired_change_right = drive_right - prev_drive.second;
 
-    double max_change_left = max_rpm_change(prev_drive_left, TIMESTEP);
-    double max_change_right = max_rpm_change(prev_drive_right, TIMESTEP);
+    double max_change_left = max_rpm_change(prev_drive.first, TIMESTEP);
+    double max_change_right = max_rpm_change(prev_drive.second, TIMESTEP);
 
-    drive_left = prev_drive_left + std::clamp(desired_change_left, -max_change_left, max_change_left);
-    drive_right = prev_drive_right + std::clamp(desired_change_right, -max_change_right, max_change_right);
+    drive_left = prev_drive.first + std::clamp(desired_change_left, -max_change_left, max_change_left);
+    drive_right = prev_drive.second + std::clamp(desired_change_right, -max_change_right, max_change_right);
 
-    prev_drive_left = drive_left;
-    prev_drive_right = drive_right;
+    prev_drive.first = drive_left;
+    prev_drive.second = drive_right;
 #else
     drive_left = std::clamp(drive_left, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
     drive_right = std::clamp(drive_right, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
