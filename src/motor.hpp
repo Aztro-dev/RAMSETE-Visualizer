@@ -1,3 +1,4 @@
+#include "constants.cpp"
 #include "ramsete.hpp"
 #include <algorithm>
 #include <cmath>
@@ -5,21 +6,20 @@
 #ifndef MOTOR_SIM
 #define MOTOR_SIM
 // Motor constants
-#define MAX_RPM 600                          // Max speed of the motor, rpm
-#define STALL_TORQUE (2.1 / 6.0)             // Nm for 600 RPM cartridge (1/6th of 100 RPM)
-#define FREE_SPEED_TORQUE 0.1                // Nm for 600 RPM cartridge
-#define TORQUE_DROPOFF_SPEED (0.6 * MAX_RPM) // 60% of max speed
+#define MAX_MOTOR_RPM 600                          // Max speed of the motor, rpm
+#define STALL_TORQUE (2.1 / 6.0)                   // Nm for 600 RPM cartridge (1/6th of 100 RPM)
+#define FREE_SPEED_TORQUE 0.1                      // Nm for 600 RPM cartridge
+#define TORQUE_DROPOFF_SPEED (0.6 * MAX_MOTOR_RPM) // 60% of max speed
 
 // Robor Constants
 #define GEAR_RATIO (1.0 / 1.0)
-#define ROBOT_MASS 12.0 / 2.2049 // lbs -> kg
 #define NUM_MOTORS_PER_SIDE 3
 
 // Calculate the torque available from a motor at a given RPM
 double get_motor_torque(double motor_rpm) {
   double abs_rpm = std::abs(motor_rpm);
 
-  if (abs_rpm >= MAX_RPM) {
+  if (abs_rpm >= MAX_MOTOR_RPM) {
     return 0.0; // Motor can't exceed max RPM
   }
 
@@ -28,7 +28,7 @@ double get_motor_torque(double motor_rpm) {
     return STALL_TORQUE;
   } else {
     // After dropoff point: linear decrease from stall torque to zero
-    double remaining_speed_ratio = (MAX_RPM - abs_rpm) / (MAX_RPM - TORQUE_DROPOFF_SPEED);
+    double remaining_speed_ratio = (MAX_MOTOR_RPM - abs_rpm) / (MAX_MOTOR_RPM - TORQUE_DROPOFF_SPEED);
     return FREE_SPEED_TORQUE + STALL_TORQUE * remaining_speed_ratio;
   }
 }
@@ -62,11 +62,11 @@ double max_rpm_change(double current_rpm, double dt) {
 
   // Ensure we don't exceed motor limits
   double possible_max_rpm = current_rpm + max_change;
-  if (possible_max_rpm > MAX_RPM * GEAR_RATIO) {
-    max_change = MAX_RPM * GEAR_RATIO - current_rpm;
+  if (possible_max_rpm > MAX_MOTOR_RPM * GEAR_RATIO) {
+    max_change = MAX_MOTOR_RPM * GEAR_RATIO - current_rpm;
   }
-  if (possible_max_rpm < -MAX_RPM * GEAR_RATIO) {
-    max_change = -MAX_RPM * GEAR_RATIO - current_rpm;
+  if (possible_max_rpm < -MAX_MOTOR_RPM * GEAR_RATIO) {
+    max_change = -MAX_MOTOR_RPM * GEAR_RATIO - current_rpm;
   }
 
   return std::abs(max_change);

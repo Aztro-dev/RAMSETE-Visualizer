@@ -39,7 +39,7 @@ main: $(SRC)
 
 # Run target
 run: main
-	./$(OUT)
+	$(OUT)
 
 # Clean build artifacts
 clean:
