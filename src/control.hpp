@@ -25,7 +25,7 @@ std::mutex target_mutex;
 TrajectoryPose target;
 
 void control_robot(std::string path) {
-  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt", reverse_indices);
+  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(path, reverse_indices);
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {
@@ -232,12 +232,15 @@ void pid_turn() {
       break;
     }
 
+    if (IsKeyDown(KEY_SPACE)) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(3));
+      continue;
+    }
+
     error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                        std::cos(target.pose.heading - robot_pose.heading));
 
     double turn_speed = error * TURN_KP;
-
-    turn_speed = std::clamp(turn_speed, -MAX_SPEED_OUTPUT, MAX_SPEED_OUTPUT);
 
     double drive_left = -turn_speed;
     double drive_right = turn_speed;
