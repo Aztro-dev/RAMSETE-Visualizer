@@ -6,7 +6,6 @@
 #include "raylib.h"
 #include <cstdint>
 #include <thread>
-#include <unistd.h>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
@@ -19,7 +18,7 @@
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
 
 int main() {
-  std::thread control_thread(control_robot, "paths/qualifier-AWP.txt");
+  std::thread control_thread(control_robot, PATH);
 
   SetTraceLogLevel(LOG_ERROR); // Only show error and fatal messages
 
@@ -41,7 +40,7 @@ int main() {
                           ROBOT_WIDTH,
                           ROBOT_LENGTH};
 
-  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath("paths/qualifier-AWP.txt", reverse_indices);
+  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(PATH, reverse_indices);
 
   double time = 0.0;
 
