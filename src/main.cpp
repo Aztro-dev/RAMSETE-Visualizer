@@ -92,21 +92,22 @@ int main() {
 // Function definitions moved outside main()
 
 void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect) {
-  for (size_t i = 0; i < trail.size() - 1; i++) {
-    Pose start = trail[i];
-    Pose end = trail[i + 1];
-    Color start_color = velocity_to_color(start.v, min_speed, max_speed);
-    Color end_color = velocity_to_color(end.v, min_speed, max_speed);
-    Color trail_color = lerp_color(start_color, end_color, static_cast<double>(i) / (trail.size() - 1));
-    DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
-  }
-
   for (size_t i = 0; i < trajectory.size() - 1; i++) {
     Pose start = trajectory[i].pose;
     Pose end = trajectory[i + 1].pose;
     Vector2 start_vec = {WINDOW_WIDTH / 2 + start.x * M_TO_PX, WINDOW_HEIGHT / 2 - start.y * M_TO_PX};
     Vector2 end_vec = {WINDOW_WIDTH / 2 + end.x * M_TO_PX, WINDOW_HEIGHT / 2 - end.y * M_TO_PX};
     DrawLineEx(start_vec, end_vec, TRAIL_THICKNESS, WHITE);
+  }
+
+  for (size_t i = 0; i < trail.size() - 1; i++) {
+    Pose start = trail[i];
+    Pose end = trail[i + 1];
+    // Color start_color = velocity_to_color(start.v);
+    // Color end_color = velocity_to_color(end.v);
+    // Color trail_color = lerp_color(start_color, end_color, static_cast<double>(i) / (trail.size() - 1));
+    Color trail_color = velocity_to_color(start.v);
+    DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
   }
 
   int current_node = 1;
