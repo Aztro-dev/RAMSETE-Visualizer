@@ -1,4 +1,7 @@
 #include <thread>
+
+#define PATH "paths/awp.txt"
+
 extern void pid_turn();
 
 std::vector<int> reverse_indices = {3, 5, 8, 10};
