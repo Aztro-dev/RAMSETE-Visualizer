@@ -17,6 +17,10 @@ void run(int current_node) {
   if (current_node == 6) {
     pid_turn();
   }
+  if (current_node == 7) {
+    printf("intaking...\n");
+    pid_turn();
+  }
   if (current_node == 8) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }

@@ -96,7 +96,7 @@ void control_robot(std::string path) {
 #endif
 
   while (!should_end && time <= trajectory[trajectory.size() - 1].time) {
-    if (IsKeyDown(KEY_SPACE)) {
+    if (IsKeyDown(KEY_SPACE) || (!IsWindowFocused())) {
       last_time = GetTime();
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       continue;

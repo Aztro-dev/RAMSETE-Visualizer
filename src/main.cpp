@@ -45,7 +45,7 @@ int main() {
   double time = 0.0;
 
   while (!WindowShouldClose()) {
-    if (!IsKeyDown(KEY_SPACE) && !path_done) {
+    if (!IsKeyDown(KEY_SPACE) && !path_done && IsWindowFocused()) {
       time += GetFrameTime();
     }
 
