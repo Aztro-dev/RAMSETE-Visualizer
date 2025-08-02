@@ -1,5 +1,6 @@
 #pragma once
 #include "motor.hpp"
+#include "paths/awp.cpp"
 #include "ramsete.hpp"
 #include <atomic>
 #include <chrono>
@@ -16,8 +17,6 @@ void pid_turn();
 std::atomic<bool> should_end({false});
 std::atomic<bool> path_done({false});
 
-std::vector<int> reverse_indices = {3, 6, 11};
-
 std::mutex position_mutex;
 Pose robot_pose;
 
@@ -29,6 +28,12 @@ std::pair<double, double> prev_drive;
 #endif
 
 void control_robot(std::string path) {
+  while (!IsWindowReady()) {
+    // If the window isn't ready, the path could go crazy as the
+    // control thread is not in focus
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
   std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(path, reverse_indices);
   RamseteController ramsete(B, ZETA);
 
@@ -127,40 +132,9 @@ void control_robot(std::string path) {
       on_node = false;
     }
 
-    switch (current_node) {
-    case 3: {
-      if (on_node) {
-        printf("outtaking...\n");
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-      }
-    }
-    case 4: {
-      if (on_node) {
-        pid_turn();
-      }
-    }
-    case 5: {
-      if (on_node) {
-        pid_turn();
-      }
-    }
-
-    case 7: {
-      if (on_node) {
-        pid_turn();
-      }
-    }
-
-    case 9: {
-      if (on_node) {
-        pid_turn();
-      }
-    }
-    case 12: {
-      if (on_node) {
-        pid_turn();
-      }
-    }
+    if (on_node) {
+      // Call the run function from the path file
+      run(current_node);
     }
 
     // Because movements/delays might take time in the previous step, we have to reset the previous time

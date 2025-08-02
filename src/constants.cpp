@@ -1,7 +1,7 @@
 #ifndef ROBOT_CONSTANTS
 #define ROBOT_CONSTANTS
 
-#define PATH "paths/qualifier-AWP.txt"
+#define PATH "paths/awp.txt"
 
 #define IN_TO_PX (800.0 / 144.0)
 #define M_TO_PX (IN_TO_PX * 100.0 / 2.54)
