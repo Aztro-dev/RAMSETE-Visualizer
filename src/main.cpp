@@ -107,7 +107,7 @@ void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, 
     // Color end_color = velocity_to_color(end.v);
     // Color trail_color = lerp_color(start_color, end_color, static_cast<double>(i) / (trail.size() - 1));
     Color trail_color = velocity_to_color(start.v);
-    DrawLineEx({start.x, start.y}, {end.x, end.y}, TRAIL_THICKNESS * 2, trail_color);
+    DrawLineEx({(float)start.x, (float)start.y}, {(float)end.x, (float)end.y}, TRAIL_THICKNESS * 2, trail_color);
   }
 
   int current_node = 1;
