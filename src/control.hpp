@@ -195,7 +195,7 @@ void control_robot(std::string path) {
   path_done = true;
 }
 
-#define TURN_KP 150.0 // Increased gain for faster turning
+#define TURN_KP 285.0 // Increased gain for faster turning
 void pid_turn() {
   double error = std::atan2(std::sin(target.pose.heading - robot_pose.heading),
                             std::cos(target.pose.heading - robot_pose.heading));
