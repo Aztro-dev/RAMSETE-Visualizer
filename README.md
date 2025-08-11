@@ -2,6 +2,9 @@
 
 A real-time tool for testing and tuning RAMSETE path-following algorithms for differential drive robots. Simulates robot motion with accurate kinematics and provides a visual interface for path tracking and tuning.
 
+![RAMSETE Visualizer Demo](resources/RamseteDemo.gif)
+
+
 ## Features
 - Real-time RAMSETE controller simulation  
 - Live path tracking (planned vs actual)  
@@ -23,17 +26,6 @@ Makefile
 - Raylib — see [Raylib GitHub Releases](https://github.com/raysan5/raylib/releases)  
 - C++17  
 
-**Install Raylib**  
-```bash
-# Ubuntu/Debian
-sudo apt install libraylib-dev
-# macOS
-brew install raylib
-# Windows (vcpkg)
-vcpkg install raylib
-
-- C++17  
-
 
 ## Build & Run
 ```bash
@@ -41,6 +33,11 @@ make
 make run
 make clean 
 ```
+## NOTE:
+```
+TUNE YOUR ACCELERATION AND RPM SPEEDS ACCORDINGLY IN THE PATH PLANNER SO THAT IT IS COMPATIBLE WITH THE MOTOR'S SLEW RATE, RERUN MANY TIMES UNTIL YOU GET THE BEST OUTCOME 
+```
+
 
 ## Usage
 - **Run** — `make run`  
@@ -56,11 +53,14 @@ std::vector<int> reverse_indices  = {6, 7}; // when you want to reverse
 
 **Tune parameters** in `constants.cpp`:
 ```cpp
-#define B 2.0
-#define ZETA 0.7
 #define TRACK_WIDTH_M 0.381
 #define WHEEL_RADIUS_M 0.0508
-#define MAX_SPEED_OUTPUT 500.0
+#define MAX_SPEED_OUTPUT 600.0
+```
+**Tune parameters** in `ramsete.cpp`:
+```cpp
+#define B 2.0 // AGGRESIVENESS FACTOR
+#define ZETA 0.7 //  DAMPING FACTOR
 ```
 
 
