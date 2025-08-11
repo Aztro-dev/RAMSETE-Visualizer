@@ -43,6 +43,7 @@ TUNE YOUR ACCELERATION AND RPM SPEEDS ACCORDINGLY IN THE PATH PLANNER SO THAT IT
 - **Run** — `make run`  
 - **Pause/Resume** — Press SPACE  
 - **Nodes** — Blue circles with numbers  
+-**Color** — Color is based on RPM Acceleration
 
 **Configure paths** in `src/control.hpp`:
 ```cpp
@@ -60,9 +61,9 @@ Configure where the robot begins on the path by modifying `src/control.hpp`:
 
 **Tune parameters** in `constants.cpp`:
 ```cpp
-#define TRACK_WIDTH_M 0.381
-#define WHEEL_RADIUS_M 0.0508
-#define MAX_SPEED_OUTPUT 600.0
+#define TRACK_WIDTH_M 0.381 // in meters
+#define WHEEL_RADIUS_M 0.0508 // in meters
+#define MAX_SPEED_OUTPUT 600.0 // in RPM
 ```
 **Tune parameters** in `ramsete.cpp`:
 ```cpp
