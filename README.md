@@ -43,7 +43,7 @@ TUNE YOUR ACCELERATION AND RPM SPEEDS ACCORDINGLY IN THE PATH PLANNER SO THAT IT
 - **Run** — `make run`  
 - **Pause/Resume** — Press SPACE  
 - **Nodes** — Blue circles with numbers  
--**Color** — Color is based on RPM Acceleration
+- **Color** — Color is based on RPM Acceleration
 
 **Configure paths** in `src/control.hpp`:
 ```cpp
