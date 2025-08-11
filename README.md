@@ -50,6 +50,13 @@ TUNE YOUR ACCELERATION AND RPM SPEEDS ACCORDINGLY IN THE PATH PLANNER SO THAT IT
 std::vector<int> rotating_indices = {4, 9, 13}; // when you want to rotate
 std::vector<int> reverse_indices  = {6, 7}; // when you want to reverse
 ```
+### Starting Node Configuration
+
+Configure where the robot begins on the path by modifying `src/control.hpp`:
+```cpp
+#define STARTING_NODE 1  // Start from node 1 (default)
+#define STARTING_NODE 5  // Start from node 5 (skip to middle of path)
+```
 
 **Tune parameters** in `constants.cpp`:
 ```cpp
