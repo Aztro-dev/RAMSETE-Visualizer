@@ -5,7 +5,7 @@
 
 extern void pid_turn();
 
-std::vector<int> reverse_indices = {3, 5, 8};
+std::vector<int> reverse_indices = {4, 5, 8};
 
 void run(int current_node) {
   if (current_node == 1) {
