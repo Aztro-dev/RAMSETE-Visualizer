@@ -1,6 +1,6 @@
 #pragma once
 #include "motor.hpp"
-#include "paths/awp.cpp" // INCLUDE CORRESPONDING PATH FILE
+#include "paths/solo_awp.cpp" // INCLUDE CORRESPONDING PATH FILE
 #include "ramsete.hpp"
 #include <atomic>
 #include <chrono>
