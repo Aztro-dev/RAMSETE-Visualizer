@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#define PATH "paths/solo-AWP.txt"
+#define PATH "paths/NEW-AWP.txt"
 
 extern void pid_turn();
 
