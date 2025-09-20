@@ -1,6 +1,5 @@
 #pragma once
 #include "motor.hpp"
-#include "paths/ELIMS-RED.cpp" // INCLUDE CORRESPONDING PATH FILE
 #include "ramsete.hpp"
 #include <atomic>
 #include <chrono>
@@ -27,14 +26,13 @@ TrajectoryPose target;
 std::pair<double, double> prev_drive;
 #endif
 
-void control_robot(std::string path) {
+void control_robot() {
   while (!IsWindowReady()) {
     // If the window isn't ready, the path could go crazy as the
     // control thread is not in focus
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
-  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(path, reverse_indices);
   RamseteController ramsete(B, ZETA);
 
   if (trajectory.empty()) {

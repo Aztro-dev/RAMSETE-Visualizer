@@ -1,6 +1,7 @@
 #include "color.cpp"
 #include "constants.cpp"
 #include "control.hpp"
+#include "odometry.hpp"
 #include "path.hpp"
 #include "ramsete.hpp"
 #include "raylib.h"
@@ -15,10 +16,11 @@
 
 #define HEADING_THRESHOLD 5.0 * DEG_TO_RAD
 
-void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect);
+void draw_path(std::vector<Pose> trail, TrajectoryPose target, Rectangle robot_rect);
 
 int main() {
-  std::thread control_thread(control_robot, PATH);
+  std::thread control_thread(control_robot);
+  std::thread odometry_thread(odometry_loop);
 
   SetTraceLogLevel(LOG_ERROR); // Only show error and fatal messages
 
@@ -39,8 +41,6 @@ int main() {
                           WINDOW_HEIGHT / 2 - robot_pose.y * M_TO_PX,
                           ROBOT_WIDTH,
                           ROBOT_LENGTH};
-
-  std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(PATH, reverse_indices);
 
   double time = 0.0;
 
@@ -73,7 +73,12 @@ int main() {
     position_mutex.unlock();
 
     DrawText(TextFormat("Time: %.1f", time), 10, 10, 25, BLACK);
-    draw_path(trail, trajectory, target_copy, robot_rect);
+    draw_path(trail, target_copy, robot_rect);
+
+    odometry.draw();
+
+    Pose estimate_pose = odometry.get_pose();
+    DrawCircleV({estimate_pose.x * M_TO_PX + 72.0 * IN_TO_PX, -estimate_pose.y * M_TO_PX + 72.0 * IN_TO_PX}, 5, YELLOW);
 
     EndDrawing();
   }
@@ -91,7 +96,7 @@ int main() {
 
 // Function definitions moved outside main()
 
-void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, TrajectoryPose target, Rectangle robot_rect) {
+void draw_path(std::vector<Pose> trail, TrajectoryPose target, Rectangle robot_rect) {
   for (size_t i = 0; i < trajectory.size() - 1; i++) {
     Pose start = trajectory[i].pose;
     Pose end = trajectory[i + 1].pose;
@@ -129,5 +134,5 @@ void draw_path(std::vector<Pose> trail, std::vector<TrajectoryPose> trajectory, 
       WINDOW_HEIGHT / 2 - target.pose.y * M_TO_PX};
   DrawCircleV(target_px, 5, RED);
 
-  DrawCircleV({robot_rect.x, robot_rect.y}, 5, YELLOW);
+  // DrawCircleV({robot_rect.x, robot_rect.y}, 5, YELLOW);
 }
