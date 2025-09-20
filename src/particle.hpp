@@ -8,7 +8,7 @@ inline double gaussian(double input) {
   return GAUSSIAN_FACTOR * std::exp(-0.5 * std::pow(input / GAUSSIAN_STDEV, 2)) / (GAUSSIAN_STDEV * std::sqrt(2 * PI));
 }
 
-#define XY_NOISE 0.025   // in m
+#define XY_NOISE 0.01    // in m
 #define THETA_NOISE 0.03 // in rad
 struct Particle {
   Pose pose;     // Position of the particle, but we don't need v
@@ -36,45 +36,45 @@ public:
   }
 
   double simulate_distance_reading(double relative_beam_angle) {
-    // Calculate the beam direction from this particle's pose
     double absolute_beam_angle = pose.heading + relative_beam_angle;
-
-    // Create a ray from this particle's position
     Vector3 particle_pos = {static_cast<float>(pose.x), static_cast<float>(pose.y), 0.0f};
     Vector3 beam_direction = {
         std::cos(static_cast<float>(absolute_beam_angle)),
         std::sin(static_cast<float>(absolute_beam_angle)),
         0.0f};
-
     Ray particle_ray = {particle_pos, beam_direction};
 
-    // Cast the ray against walls to find distance
     double min_distance = INFINITY;
-    for (size_t i = 0; i < walls.size(); i++) {
-      RayCollision collision = GetRayCollisionBox(particle_ray, walls[i]);
-      if (collision.hit && collision.distance < min_distance) {
-        min_distance = collision.distance;
+    for (size_t i = 0; i < NUM_WALLS; i++) {
+      RayCollision temp_collision = GetRayCollisionBox(particle_ray, walls[i]);
+      // Make this match your Beam::perform_hit() logic exactly
+      if (temp_collision.hit && temp_collision.distance <= MAX_BEAM_DISTANCE && temp_collision.distance < min_distance) {
+        min_distance = temp_collision.distance;
       }
     }
 
-    return min_distance;
+    // If no collision found within range, return MAX_BEAM_DISTANCE (not INFINITY)
+    return (min_distance == INFINITY) ? MAX_BEAM_DISTANCE : min_distance;
   }
 
   void update_weight(Beam beams[NUM_BEAMS]) {
-    weight = 1.0; // Start with neutral weight
-
+    weight = 1.0; // neutral weight
     for (size_t i = 0; i < NUM_BEAMS; i++) {
-      // Get actual sensor reading
       double actual_distance = beams[i].get_hit_distance();
-
-      // Simulate what this particle would "see"
       double expected_distance = simulate_distance_reading(beams[i].get_relative_angle());
 
-      // Compare actual vs expected (smaller difference = higher weight)
-      double error = std::abs(actual_distance - expected_distance);
-
-      // Apply Gaussian weight based on error
-      weight *= gaussian(error);
+      if (actual_distance == INFINITY && expected_distance >= MAX_BEAM_DISTANCE) {
+        // Neither see an obstacle
+        continue;
+      } else if (actual_distance == INFINITY || expected_distance >= MAX_BEAM_DISTANCE) {
+        // only 1 sees an obstacle
+        double error = MAX_BEAM_DISTANCE * 0.5; // penalty of -50%
+        weight *= gaussian(error);
+      } else {
+        // Both see obstacles
+        double error = std::abs(actual_distance - expected_distance);
+        weight *= gaussian(error);
+      }
     }
   }
 

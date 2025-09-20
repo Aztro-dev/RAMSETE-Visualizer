@@ -2,7 +2,21 @@
 #include "path.hpp"
 #include "raylib.h"
 
-std::vector<BoundingBox> walls(4);
+BoundingBox walls[NUM_WALLS] = {
+    // Field walls
+    BoundingBox{Vector3{-72.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0}, Vector3{72.0 * IN_TO_M, -70.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{70.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0}, Vector3{72.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{-72.0 * IN_TO_M, 70.0 * IN_TO_M, 0.0}, Vector3{72.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{-72.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0}, Vector3{-70.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}},
+    // Center goals
+    BoundingBox{Vector3{-5.0 * IN_TO_M, -5.0 * IN_TO_M, 0.0}, Vector3{5.0 * IN_TO_M, 5.0 * IN_TO_M, 0.0}},
+    // Long goals
+    BoundingBox{Vector3{-24.0 * IN_TO_M, -50.0 * IN_TO_M, 0.0}, Vector3{-22.0 * IN_TO_M, -44.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{-24.0 * IN_TO_M, 44.0 * IN_TO_M, 0.0}, Vector3{-22.0 * IN_TO_M, 50.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{22.0 * IN_TO_M, -50.0 * IN_TO_M, 0.0}, Vector3{24.0 * IN_TO_M, -44.0 * IN_TO_M, 0.0}},
+    BoundingBox{Vector3{22.0 * IN_TO_M, 44.0 * IN_TO_M, 0.0}, Vector3{24.0 * IN_TO_M, 50.0 * IN_TO_M, 0.0}}
+    //
+};
 
 #define BEAM_WIDTH 2.0
 class Beam {
@@ -31,21 +45,6 @@ public:
     direction.z /= magnitude;
 
     ray = Ray{pos, direction};
-
-    if (walls.size() != 3) {
-      walls.push_back(BoundingBox{
-          Vector3{-72.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0},
-          Vector3{72.0 * IN_TO_M, -70.0 * IN_TO_M, 0.0}});
-      walls.push_back(BoundingBox{
-          Vector3{70.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0},
-          Vector3{72.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}});
-      walls.push_back(BoundingBox{
-          Vector3{-72.0 * IN_TO_M, 70.0 * IN_TO_M, 0.0},
-          Vector3{72.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}});
-      walls.push_back(BoundingBox{
-          Vector3{-72.0 * IN_TO_M, -72.0 * IN_TO_M, 0.0},
-          Vector3{-70.0 * IN_TO_M, 72.0 * IN_TO_M, 0.0}});
-    }
   }
 
   double get_relative_angle() {
@@ -72,11 +71,24 @@ public:
 
   // Does the raycast to see how far the walls are
   void perform_hit() {
-    for (size_t i = 0; i < walls.size(); i++) {
+    double min_distance = INFINITY;
+    RayCollision min_collision = {0};
+    bool found_hit = false;
+    for (size_t i = 0; i < NUM_WALLS; i++) {
       collision = GetRayCollisionBox(ray, walls[i]);
-      if (collision.hit) {
-        break;
+      if (collision.hit && collision.distance <= MAX_BEAM_DISTANCE && collision.distance < min_distance) {
+        min_distance = collision.distance;
+        min_collision = collision;
+        found_hit = true;
       }
+    }
+
+    if (found_hit) {
+      collision = min_collision;
+      collision.hit = true;
+    } else {
+      collision.distance = INFINITY;
+      collision.hit = false;
     }
   }
 
@@ -103,6 +115,10 @@ public:
   }
 
   void draw_beam() {
+    if (!collision.hit) {
+      return;
+    }
+
     Vector2 start = Vector2{ray.position.x * M_TO_PX, ray.position.y * M_TO_PX};
     Vector2 end = Vector2{collision.point.x * M_TO_PX, collision.point.y * M_TO_PX};
 
@@ -117,7 +133,7 @@ public:
   }
 
   void draw_walls() {
-    for (size_t i = 0; i < walls.size(); i++) {
+    for (size_t i = 0; i < NUM_WALLS; i++) {
       Vector2 position = Vector2{walls[i].min.x * M_TO_PX, walls[i].min.y * M_TO_PX};
       Vector2 size = Vector2{walls[i].max.x * M_TO_PX, walls[i].max.y * M_TO_PX};
       size.x -= position.x;

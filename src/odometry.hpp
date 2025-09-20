@@ -95,16 +95,18 @@ public:
     pose.y = 0.0;
     pose.heading = 0.0;
 
+    // circular averaging:
+    double sin_sum = 0.0, cos_sum = 0.0;
     for (size_t i = 0; i < NUM_PARTICLES; i++) {
       particles[i] = new_particles[i];
       pose.x += particles[i].pose.x;
       pose.y += particles[i].pose.y;
-      pose.heading += particles[i].pose.heading;
+      sin_sum += std::sin(particles[i].pose.heading);
+      cos_sum += std::cos(particles[i].pose.heading);
     }
-
     pose.x /= NUM_PARTICLES;
     pose.y /= NUM_PARTICLES;
-    pose.heading /= NUM_PARTICLES;
+    pose.heading = std::atan2(sin_sum / NUM_PARTICLES, cos_sum / NUM_PARTICLES);
 
     prev_pose = current_robot_pose;
   }
