@@ -4,13 +4,14 @@
 
 std::vector<BoundingBox> walls(4);
 
-#define RAY_WIDTH 2.0
+#define BEAM_WIDTH 2.0
 class Beam {
   Ray ray;
   RayCollision collision;
   double relative_angle; // Store the beam's angle relative to robot
 
 public:
+  Beam() {}
   Beam(Pose position) {
     relative_angle = position.heading;
 
@@ -112,7 +113,7 @@ public:
     start.y += 72.0 * IN_TO_PX;
     end.x += 72.0 * IN_TO_PX;
     end.y += 72.0 * IN_TO_PX;
-    DrawLineEx(start, end, RAY_WIDTH, YELLOW);
+    DrawLineEx(start, end, BEAM_WIDTH, YELLOW);
   }
 
   void draw_walls() {

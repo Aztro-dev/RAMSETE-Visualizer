@@ -19,4 +19,7 @@
 #define MAX_SPEED_OUTPUT 600.0
 
 #define ROBOT_MASS 12.0 / 2.2049 // lbs -> kg
+
+#define NUM_PARTICLES 500 // 500 particles means quite good Localization, but high performance hit
+#define NUM_BEAMS 4       // 4 distance sensors
 #endif
