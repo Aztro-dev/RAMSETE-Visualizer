@@ -25,9 +25,7 @@ CPPFLAGS := -I. -I$(RAYLIB_INCLUDE) -I$(RAYLIB_EXTERNAL)
 ifeq ($(UNAME), Linux)
 	LIBS := -L$(RAYLIB_DIR) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
 	DEFINES := -DPLATFORM_DESKTOP -DPLATFORM_DESKTOP_GLFW -D_DEFAULT_SOURCE
-#endif
 else
-#ifeq ($(UNAME), Windows_NT)
 	CPPFLAGS += -I$(RAYLIB_DIR)
 	LIBS := -L$(RAYLIB_DIR) -lraylib -lgdi32 -lwinmm
 	DEFINES := -DPLATFORM_DESKTOP
