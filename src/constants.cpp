@@ -22,8 +22,8 @@
 
 #define MAX_BEAM_DISTANCE 2.0 // Distance sensors are only accurate up to 2m
 
-#define NUM_PARTICLES 1000 // 500 particles means quite good Localization, but high performance hit
-#define NUM_BEAMS 4        // 4 distance sensors
-#define NUM_WALLS 9        // Number of obstacles (field walls, goals, etc)
+#define NUM_PARTICLES 500 // 500 particles means quite good Localization, but high performance hit
+#define NUM_BEAMS 4       // 4 distance sensors
+#define NUM_WALLS 9       // Number of obstacles (field walls, goals, etc)
 
 #endif
