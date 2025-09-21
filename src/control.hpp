@@ -1,6 +1,7 @@
 #pragma once
 #include "motor.hpp"
 #include "ramsete.hpp"
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -13,8 +14,8 @@ void pid_turn();
 #define TIMESTEP 0.010 // corresponds to robot's 10ms update rate
 #define STARTING_NODE 1
 
-std::atomic<bool> should_end({false});
-std::atomic<bool> path_done({false});
+std::atomic<bool> should_end(false);
+std::atomic<bool> path_done(false);
 
 std::mutex position_mutex;
 Pose robot_pose;
