@@ -1,6 +1,6 @@
 #pragma once
-#include "paths/ELIMS-RED.cpp" // INCLUDE CORRESPONDING PATH FILE
 #include "constants.cpp"
+#include "paths/MCL-Test.cpp" // INCLUDE CORRESPONDING PATH FILE
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -119,4 +119,3 @@ std::vector<TrajectoryPose> loadJerryIOCSVPath(const std::string &pathFile, std:
 }
 
 static std::vector<TrajectoryPose> trajectory = loadJerryIOCSVPath(PATH, reverse_indices);
-
