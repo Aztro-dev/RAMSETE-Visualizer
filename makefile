@@ -19,12 +19,15 @@ $(shell mkdir -p $(OUT_DIR))
 
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -g -O2 -Wall -Wno-narrowing -Wno-missing-braces
+CXXFLAGS := -std=c++17 -g -O2 -Wall -Wno-narrowing -Wno-missing-braces
 CPPFLAGS := -I. -I$(RAYLIB_INCLUDE) -I$(RAYLIB_EXTERNAL)
 
 ifeq ($(UNAME), Linux)
 	LIBS := -L$(RAYLIB_DIR) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11 -latomic
 	DEFINES := -DPLATFORM_DESKTOP -DPLATFORM_DESKTOP_GLFW -D_DEFAULT_SOURCE
+else ifeq ($(UNAME), Darwin)
+	LIBS := -L$(RAYLIB_DIR) -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+	DEFINES := -DPLATFORM_DESKTOP
 else
 	CPPFLAGS += -I$(RAYLIB_DIR)
 	LIBS := -L$(RAYLIB_DIR) -lraylib -lgdi32 -lwinmm
