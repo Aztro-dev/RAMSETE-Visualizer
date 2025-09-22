@@ -24,6 +24,8 @@ public:
       particles[i] = Particle(start_pose);
     }
 
+    start_pose.x += 1.0;
+
     // Equally space the rays out in a circle
     double angle = 2 * PI / NUM_BEAMS;
     for (size_t i = 0; i < NUM_BEAMS; i++) {

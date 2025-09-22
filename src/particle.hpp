@@ -52,7 +52,6 @@ public:
     double min_distance = INFINITY;
     for (size_t i = 0; i < NUM_WALLS; i++) {
       RayCollision temp_collision = GetRayCollisionBox(particle_ray, walls[i]);
-      // Make this match your Beam::perform_hit() logic exactly
       if (temp_collision.hit && temp_collision.distance <= MAX_BEAM_DISTANCE && temp_collision.distance < min_distance) {
         min_distance = temp_collision.distance;
       }
