@@ -11,8 +11,8 @@
 #define RPM_TO_RAD_S ((2.0 * M_PI) / 60.0)
 
 #define WHEEL_RADIUS_M (2.75 / 2.0 * IN_TO_M) // 2.75 inch diameter / 2 -> meters
-#define TRACK_WIDTH_M (12.5 * IN_TO_M)        // 12.5 inches -> meters
-#define TRACK_HEIGHT_M (15.0 * IN_TO_M)       // 15.0 inches -> meters
+#define TRACK_WIDTH_M (10.0 * IN_TO_M)        // 12.5 inches -> meters
+#define TRACK_HEIGHT_M (12.0 * IN_TO_M)       // 15.0 inches -> meters
 #define ROBOT_WIDTH (12.5 * IN_TO_PX)
 #define ROBOT_LENGTH (14.0 * IN_TO_PX)
 
@@ -26,4 +26,5 @@
 #define NUM_BEAMS 4       // 4 distance sensors
 #define NUM_WALLS 9       // Number of obstacles (field walls, goals, etc)
 
+#define DEBUG_MODE true
 #endif

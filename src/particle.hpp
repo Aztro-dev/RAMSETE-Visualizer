@@ -35,9 +35,14 @@ public:
     pose.heading += THETA_NOISE * GetRandomValue(-1e9, 1e9) / 1e9;
   }
 
-  double simulate_distance_reading(double relative_beam_angle) {
-    double absolute_beam_angle = pose.heading + relative_beam_angle;
-    Vector3 particle_pos = {static_cast<float>(pose.x), static_cast<float>(pose.y), 0.0f};
+  double simulate_distance_reading(Pose beam_local_pose) {
+    double absolute_beam_angle = pose.heading + beam_local_pose.heading;
+
+    Pose rotated;
+    rotated.x = beam_local_pose.x * std::cos(robot_pose.heading) - beam_local_pose.y * std::sin(robot_pose.heading);
+    rotated.y = beam_local_pose.x * std::sin(robot_pose.heading) + beam_local_pose.y * std::cos(robot_pose.heading);
+
+    Vector3 particle_pos = {static_cast<float>(pose.x + rotated.x), static_cast<float>(pose.y + rotated.y), 0.0f};
     Vector3 beam_direction = {
         std::cos(static_cast<float>(absolute_beam_angle)),
         std::sin(static_cast<float>(absolute_beam_angle)),
@@ -61,7 +66,7 @@ public:
     weight = 1.0; // neutral weight
     for (size_t i = 0; i < NUM_BEAMS; i++) {
       double actual_distance = beams[i].get_hit_distance();
-      double expected_distance = simulate_distance_reading(beams[i].get_relative_angle());
+      double expected_distance = simulate_distance_reading(beams[i].get_local_pose());
 
       if (actual_distance == INFINITY && expected_distance >= MAX_BEAM_DISTANCE) {
         // Neither see an obstacle

@@ -19,23 +19,21 @@ public:
     pose = start_pose;
     prev_pose = pose;
 
-    // particles = std::vector<Particle>(NUM_PARTICLES);
     for (size_t i = 0; i < NUM_PARTICLES; i++) {
       // All particles at the start pose
       particles[i] = Particle(start_pose);
     }
 
-    // beams = std::vector<Beam>(NUM_BEAMS);
     // Equally space the rays out in a circle
     double angle = 2 * PI / NUM_BEAMS;
     for (size_t i = 0; i < NUM_BEAMS; i++) {
-      Pose beam_pose = start_pose;
+      Pose beam_pose;
       double beam_angle = angle * i;
-      beam_pose.x += TRACK_WIDTH_M * std::cos(beam_angle);
-      beam_pose.y += TRACK_HEIGHT_M * std::sin(beam_angle);
-      beam_pose.heading += beam_angle;
+      beam_pose.x = (TRACK_WIDTH_M / 2.0) * std::cos(beam_angle);
+      beam_pose.y = (TRACK_HEIGHT_M / 2.0) * std::sin(beam_angle);
+      beam_pose.heading = (i % NUM_BEAMS) * angle;
 
-      beams[i] = Beam(beam_pose);
+      beams[i] = Beam(beam_pose, start_pose);
     }
   }
 
@@ -124,7 +122,9 @@ public:
       beams[i].draw_beam();
     }
 
-    // beams[0].draw_walls();
+#if DEBUG_MODE
+    beams[0].draw_walls();
+#endif
   }
 };
 

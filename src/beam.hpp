@@ -22,21 +22,29 @@ BoundingBox walls[NUM_WALLS] = {
 class Beam {
   Ray ray;
   RayCollision collision;
-  double relative_angle; // Store the beam's angle relative to robot
+  Pose local_pose;
 
 public:
   Beam() {}
-  Beam(Pose position) {
-    relative_angle = position.heading;
+  // position is the pose of the LiDAR relative to teh robot
+  // start_pose is the pose of the robot to begin with
+  Beam(Pose position, Pose start_pose) {
+    local_pose = position; // Position relative to the robot
+
+    Pose rotated;
+    rotated.x = local_pose.x * std::cos(start_pose.heading) - local_pose.y * std::sin(start_pose.heading);
+    rotated.y = local_pose.x * std::sin(start_pose.heading) + local_pose.y * std::cos(start_pose.heading);
 
     Vector3 pos = Vector3{
-        static_cast<float>(position.x),
-        static_cast<float>(position.y),
+        static_cast<float>(start_pose.x + rotated.x),
+        static_cast<float>(start_pose.y + rotated.y),
         0.0};
 
+    double absolute_heading = start_pose.heading + local_pose.heading;
+
     Vector3 direction = Vector3{
-        std::cos(static_cast<float>(position.heading)),
-        std::sin(static_cast<float>(position.heading)),
+        std::cos(static_cast<float>(absolute_heading)),
+        std::sin(static_cast<float>(absolute_heading)),
         0.0};
 
     float magnitude = std::sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
@@ -47,15 +55,18 @@ public:
     ray = Ray{pos, direction};
   }
 
-  double get_relative_angle() {
-    return relative_angle;
+  Pose get_local_pose() {
+    return local_pose;
   }
 
   void update_pose(Pose robot_pose) {
-    ray.position.x = robot_pose.x;
-    ray.position.y = robot_pose.y;
+    Pose rotated;
+    rotated.x = local_pose.x * std::cos(robot_pose.heading) - local_pose.y * std::sin(robot_pose.heading);
+    rotated.y = local_pose.x * std::sin(robot_pose.heading) + local_pose.y * std::cos(robot_pose.heading);
+    ray.position.x = robot_pose.x + rotated.x;
+    ray.position.y = robot_pose.y + rotated.y;
 
-    double absolute_heading = robot_pose.heading + relative_angle;
+    double absolute_heading = robot_pose.heading + local_pose.heading;
 
     Vector3 direction = Vector3{
         std::cos(static_cast<float>(absolute_heading)),
