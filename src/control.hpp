@@ -27,6 +27,8 @@ TrajectoryPose target;
 std::pair<double, double> prev_drive;
 #endif
 
+size_t i = 0;
+
 void control_robot() {
   while (!IsWindowReady()) {
     // If the window isn't ready, the path could go crazy as the
@@ -40,8 +42,6 @@ void control_robot() {
     std::cerr << "No path points loaded.\n";
     return;
   }
-
-  size_t i = 0;
 
   bool on_node = false;
 

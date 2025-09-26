@@ -24,8 +24,6 @@ public:
       particles[i] = Particle(start_pose);
     }
 
-    start_pose.x += 1.0;
-
     // Equally space the rays out in a circle
     double angle = 2 * PI / NUM_BEAMS;
     for (size_t i = 0; i < NUM_BEAMS; i++) {
@@ -45,17 +43,17 @@ public:
 
   void step() {
     position_mutex.lock();
-    Pose current_robot_pose = robot_pose;
+    Pose commanded_pose = trajectory[i].pose;
     position_mutex.unlock();
 
     Pose delta;
-    delta.x = current_robot_pose.x - prev_pose.x;
-    delta.y = current_robot_pose.y - prev_pose.y;
-    delta.heading = current_robot_pose.heading - prev_pose.heading;
+    delta.x = commanded_pose.x - prev_pose.x;
+    delta.y = commanded_pose.y - prev_pose.y;
+    delta.heading = commanded_pose.heading - prev_pose.heading;
     delta.heading = std::atan2(std::sin(delta.heading), std::cos(delta.heading));
 
     for (size_t i = 0; i < NUM_BEAMS; i++) {
-      beams[i].update_pose(current_robot_pose);
+      beams[i].update_pose(commanded_pose);
       beams[i].perform_hit();
     }
 
@@ -108,7 +106,7 @@ public:
     pose.y /= NUM_PARTICLES;
     pose.heading = std::atan2(sin_sum / NUM_PARTICLES, cos_sum / NUM_PARTICLES);
 
-    prev_pose = current_robot_pose;
+    prev_pose = commanded_pose;
   }
 
   void draw() {
